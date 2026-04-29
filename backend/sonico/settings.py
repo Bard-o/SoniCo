@@ -75,7 +75,7 @@ DATABASES = {
 
 # Fix for Supabase Transaction Pooler: Disable prepared statements
 if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
-    DATABASES['default'].setdefault('OPTIONS', {})['prepare_threshold'] = 0
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 
 # --- Password validation ---
 AUTH_PASSWORD_VALIDATORS = [
