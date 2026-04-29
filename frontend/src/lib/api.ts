@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { supabase } from './supabase'
 
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001/api'
 
 /**
  * Axios instance pre-configured to talk to the Django backend.

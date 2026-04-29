@@ -72,9 +72,10 @@ DATABASES = {
         conn_max_age=600,
     )
 }
-# Disable prepared statements for Supabase Transaction Pooler compatibility
-db_options = DATABASES['default'].setdefault('OPTIONS', {})
-db_options['prepare_threshold'] = 0
+
+# Fix for Supabase Transaction Pooler: Disable prepared statements
+if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+    DATABASES['default'].setdefault('OPTIONS', {})['prepare_threshold'] = 0
 
 # --- Password validation ---
 AUTH_PASSWORD_VALIDATORS = [
@@ -110,6 +111,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
 ]
 CORS_ALLOW_CREDENTIALS = True
 
