@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* ============================================================
+   SoniCo / AudioQBox — Design Tokens
+   Based on DESIGN.md "SaaS Minimalist" system
+   ============================================================ */
+
+@theme {
+  /* --- Colors (from DESIGN.md) --- */
+  --color-primary: #2563eb;
+  --color-primary-dark: #004ac6;
+  --color-primary-light: #dbe1ff;
+  --color-on-primary: #ffffff;
+
+  --color-secondary: #505f76;
+  --color-secondary-container: #d0e1fb;
+
+  --color-tertiary: #943700;
+  --color-tertiary-container: #bc4800;
+
+  --color-surface: #faf8ff;
+  --color-surface-dim: #d9d9e5;
+  --color-surface-container: #ededf9;
+  --color-surface-container-low: #f3f3fe;
+  --color-surface-container-high: #e7e7f3;
+
+  --color-on-surface: #191b23;
+  --color-on-surface-variant: #434655;
+
+  --color-outline: #737686;
+  --color-outline-variant: #c3c6d7;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+
+  --color-inverse-surface: #2e3039;
+  --color-inverse-on-surface: #f0f0fb;
+
+  /* --- Typography scale --- */
+  --font-family-base: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================
+   Global resets and base styles
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-base);
+  color: var(--color-on-surface);
+  background-color: var(--color-surface);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Supabase Auth UI overrides to match our design system
+   ============================================================ */
+
+[data-supabase-auth-ui] button[type="submit"],
+.supabase-auth-ui_ui-button {
+  background-color: var(--color-primary) !important;
+  border-radius: 0.375rem !important;
+  font-weight: 500 !important;
+}
+
+[data-supabase-auth-ui] input,
+.supabase-auth-ui_ui-input {
+  border-color: var(--color-outline-variant) !important;
+  border-radius: 0.25rem !important;
+}
