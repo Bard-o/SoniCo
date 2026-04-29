@@ -1,2 +1,43 @@
+# === Environment ===
+.env
+.env.local
+.env.production
 
+# === Python / Django ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+db.sqlite3
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# === Node / React ===
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# === Docker ===
+docker-compose.override.yml
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Documentation (private prompts) ===
 documentation/prompts/
