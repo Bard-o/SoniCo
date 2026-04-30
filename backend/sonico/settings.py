@@ -66,11 +66,20 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sonico.wsgi.application'
 
 # --- Database (Supabase PostgreSQL via Transaction Pooler) ---
+_db_config = dj_database_url.config(
+    default=os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite3'),
+    conn_max_age=600,
+)
+
+# If it's PostgreSQL, we need to handle prepare_threshold specially for Supabase
+if _db_config.get('ENGINE') == 'django.db.backends.postgresql':
+    # Remove from top-level (in case it came from the URL query string)
+    _db_config.pop('prepare_threshold', None)
+    # Set it correctly in OPTIONS
+    _db_config.setdefault('OPTIONS', {})['prepare_threshold'] = 0
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite3'),
-        conn_max_age=600,
-    )
+    'default': _db_config
 }
 
 # Fix for Supabase Transaction Pooler: Disable prepared statements
