@@ -1,2 +1,4 @@
 # ignore documentation prompt files
-documentation/* 
+documentation/*
+# ignore github MCP config
+opencode.json
