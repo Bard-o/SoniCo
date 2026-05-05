@@ -2,3 +2,6 @@
 documentation/*
 # ignore github MCP config
 opencode.json
+# ignore skills (temporal)
+skills-lock.json
+.agents/*
