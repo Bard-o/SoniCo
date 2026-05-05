@@ -5,3 +5,5 @@ opencode.json
 # ignore skills (temporal)
 skills-lock.json
 .agents/*
+
+agents.md
