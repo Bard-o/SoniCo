@@ -17,5 +17,5 @@ Object.defineProperty(window, "matchMedia", {
 // Mock Supabase environment variables
 Object.defineProperty(window, "import", {
   writable: true,
-  value: { meta: { env: { VITE_SUPABASE_URL: "http://localhost:54321", VITE_SUPABASE_ANON_KEY: "test-key" } } },
+  value: { meta: { env: { VITE_SUPABASE_URL: "http://localhost:54321", VITE_SUPABASE_PUBLISHABLE_KEY: "test-key" } } },
 });
