@@ -28,10 +28,11 @@ const Login = () => {
     setIsLoading(false);
 
     if (signInError) {
+      console.error("SignIn error:", signInError);
       if (signInError.message.includes("Invalid login credentials")) {
         setError("Correo o contraseña inválidos.");
       } else {
-        setError("Error al iniciar sesión. Intenta de nuevo.");
+        setError(signInError.message);
       }
       return;
     }
@@ -59,9 +60,9 @@ const Login = () => {
         redirectTo: `${window.location.origin}/app`,
       },
     });
-    setIsLoading(false);
     if (oauthError) {
-      setError("Error con Google. Intenta de nuevo.");
+      console.error("Google OAuth error:", oauthError);
+      setError(oauthError.message);
     }
   };
 

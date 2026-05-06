@@ -33,7 +33,7 @@ const Register = () => {
 
     setIsLoading(true);
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -46,11 +46,18 @@ const Register = () => {
     setIsLoading(false);
 
     if (signUpError) {
+      console.error("SignUp error:", signUpError);
       if (signUpError.message.includes("already registered")) {
         setError("Este correo ya está registrado.");
       } else {
-        setError("Error al crear la cuenta. Intenta de nuevo.");
+        setError(signUpError.message);
       }
+      return;
+    }
+
+    // Email confirmation might be enabled — check if we got a session
+    if (!signUpData.session) {
+      setError("Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.");
       return;
     }
 
@@ -66,9 +73,9 @@ const Register = () => {
         redirectTo: `${window.location.origin}/app`,
       },
     });
-    setIsLoading(false);
     if (oauthError) {
-      setError("Error con Google. Intenta de nuevo.");
+      console.error("Google OAuth error:", oauthError);
+      setError(oauthError.message);
     }
   };
 
