@@ -37,8 +37,7 @@ const Login = () => {
       return;
     }
 
-    // AuthContext handles role-based redirect via onAuthStateChange
-    navigate("/", { replace: true });
+    // AuthContext.onAuthStateChange handles role-based redirect to /app or /owner
   };
 
   const handleGoogleSignIn = async () => {

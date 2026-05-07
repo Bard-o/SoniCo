@@ -61,7 +61,7 @@ const Register = () => {
       return;
     }
 
-    navigate("/app", { replace: true });
+    // AuthContext.onAuthStateChange handles role-based redirect
   };
 
   const handleGoogleSignIn = async () => {
