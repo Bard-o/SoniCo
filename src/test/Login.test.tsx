@@ -114,7 +114,7 @@ describe("Login", () => {
       expect(mockSignInWithOAuth).toHaveBeenCalledWith({
         provider: "google",
         options: expect.objectContaining({
-          redirectTo: expect.stringContaining("/app"),
+          redirectTo: expect.stringContaining("/login"),
         }),
       });
     });

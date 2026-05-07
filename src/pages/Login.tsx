@@ -37,18 +37,8 @@ const Login = () => {
       return;
     }
 
-    // Fetch profile to determine role and redirect
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
-
-    if (profile?.role === "owner") {
-      navigate("/owner", { replace: true });
-    } else {
-      navigate("/app", { replace: true });
-    }
+    // AuthContext handles role-based redirect via onAuthStateChange
+    navigate("/", { replace: true });
   };
 
   const handleGoogleSignIn = async () => {
@@ -57,7 +47,7 @@ const Login = () => {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/app`,
+        redirectTo: `${window.location.origin}/login`,
       },
     });
     if (oauthError) {

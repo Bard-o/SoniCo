@@ -69,11 +69,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(null);
           setUser(null);
           setProfile(null);
-        } else if (event === "SIGNED_IN" && newSession) {
+          navigate("/login");
+        } else if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && newSession) {
           setSession(newSession);
           setUser(newSession.user);
           const profileData = await fetchProfile(newSession.user.id);
           setProfile(profileData);
+
+          // Redirect based on role after fresh login or OAuth callback
+          const isAuthPage = ["/login", "/register"].includes(window.location.pathname);
+          if (isAuthPage && profileData) {
+            navigate(profileData.role === "owner" ? "/owner" : "/app", { replace: true });
+          }
         } else if (event === "TOKEN_REFRESHED" && newSession) {
           setSession(newSession);
           setUser(newSession.user);
