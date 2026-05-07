@@ -65,15 +65,27 @@ export const AppShell = ({
   children: ReactNode;
 }) => {
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isLoading } = useAuth();
   const [notifications, setNotifications] = useState(sampleNotifications);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const currentRole = profile?.role ?? role;
+  // Don't render authenticated UI until profile is loaded
+  if (isLoading || !profile) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-foreground/60">Cargando…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentRole = profile.role ?? role;
   const links = currentRole === "owner" ? ownerLinks : userLinks;
 
-  const initials = getInitials(profile?.full_name ?? (currentRole === "owner" ? "MR" : "JL"));
-  const fullName = profile?.full_name ?? (currentRole === "owner" ? "María Reyes" : "Javier López");
+  const initials = getInitials(profile.full_name);
+  const fullName = profile.full_name;
 
   const navItem = ({ isActive }: { isActive: boolean }) =>
     cn(
