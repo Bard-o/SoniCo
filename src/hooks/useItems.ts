@@ -34,10 +34,15 @@ export function useItems(categoryFilter?: ItemCategory) {
   const create = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
     console.log("[useItems.create] called with:", JSON.stringify(item, null, 2));
     try {
-      // Bypass supabase-js client, use direct fetch to isolate the hang
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      console.log("[useItems.create] token present:", !!token);
+      // Bypass supabase-js entirely — getSession hangs due to gotrue clock skew
+      const sbToken = localStorage.getItem("sb-rxudtsesweqyywqomcmf-auth-token");
+      const parsed = sbToken ? JSON.parse(sbToken) : null;
+      const token = parsed?.access_token;
+      console.log("[useItems.create] token from localStorage:", !!token, token ? token.slice(0, 10) + "..." : "NONE");
+
+      if (!token) {
+        throw new Error("No hay sesión activa. Inicia sesión de nuevo.");
+      }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
