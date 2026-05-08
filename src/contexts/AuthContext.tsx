@@ -45,7 +45,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Race getSession against a 10s timeout — gotrue-js can hang on clock skew / URL parse
+        // Manual OAuth callback handling (detectSessionInUrl is false in createClient)
+        const hash = window.location.hash;
+        if (hash && hash.includes("access_token")) {
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get("access_token");
+          const refreshToken = params.get("refresh_token");
+          const expiresIn = params.get("expires_in");
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            // Clean the URL hash so it doesn't reappear on next reload
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          }
+        }
+
+        // Race getSession against a 10s timeout — gotrue-js can hang
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
 
