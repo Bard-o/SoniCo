@@ -45,21 +45,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Manual OAuth callback handling (detectSessionInUrl is false in createClient)
-        const hash = window.location.hash;
-        if (hash && hash.includes("access_token")) {
-          const params = new URLSearchParams(hash.substring(1));
-          const accessToken = params.get("access_token");
-          const refreshToken = params.get("refresh_token");
-          const expiresIn = params.get("expires_in");
-          if (accessToken && refreshToken) {
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            // Clean the URL hash so it doesn't reappear on next reload
-            window.history.replaceState(null, "", window.location.pathname + window.location.search);
-          }
+        // Recover OAuth tokens stashed by supabase.ts (hash cleaned before gotrue-js sees it)
+        const recoveryRaw = sessionStorage.getItem("supabase_oauth_recovery");
+        if (recoveryRaw) {
+          const { accessToken, refreshToken } = JSON.parse(recoveryRaw);
+          sessionStorage.removeItem("supabase_oauth_recovery");
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
         }
 
         // Race getSession against a 10s timeout — gotrue-js can hang
