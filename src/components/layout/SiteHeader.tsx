@@ -12,7 +12,7 @@ import { ChevronDown, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const SiteHeader = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isLoading, signOut } = useAuth();
 
   const navItem = ({ isActive }: { isActive: boolean }) =>
     `text-sm transition-colors ${
@@ -28,6 +28,8 @@ export const SiteHeader = () => {
       .slice(0, 2);
   };
 
+  // Don't show auth UI until profile is resolved — avoids "??" flash
+  const showAuth = !isLoading && user && profile;
   const initials = profile?.full_name ? getInitials(profile.full_name) : "??";
   const fullName = profile?.full_name ?? "Usuario";
 
@@ -46,7 +48,9 @@ export const SiteHeader = () => {
         </nav>
 
         <div className="flex items-center gap-2">
-          {user ? (
+          {isLoading ? (
+            <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+          ) : user && profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-foreground/5">
