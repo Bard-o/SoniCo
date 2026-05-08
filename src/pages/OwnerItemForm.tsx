@@ -234,12 +234,12 @@ const OwnerItemForm = () => {
             <h2 className="sub-heading">Precios y disponibilidad</h2>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="addon">Add-on por reserva (€)</Label>
+                <Label htmlFor="addon">Add-on por reserva</Label>
                 <Input id="addon" type="number" min={0} value={addonPrice} onChange={(e) => setAddonPrice(Number(e.target.value))} />
                 <p className="text-xs text-foreground/55">Precio cuando se añade a una reserva de sala.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rental">Precio de alquiler (€)</Label>
+                <Label htmlFor="rental">Precio de alquiler</Label>
                 <Input id="rental" type="number" min={0} value={rentalPrice} onChange={(e) => setRentalPrice(Number(e.target.value))} />
                 <p className="text-xs text-foreground/55">Precio para alquileres standalone.</p>
               </div>
@@ -262,7 +262,7 @@ const OwnerItemForm = () => {
               </div>
               {forSale && (
                 <div className="space-y-2">
-                  <Label htmlFor="sale">Precio de venta (€)</Label>
+                  <Label htmlFor="sale">Precio de venta</Label>
                   <Input id="sale" type="number" min={0} value={salePrice} onChange={(e) => setSalePrice(Number(e.target.value))} />
                 </div>
               )}

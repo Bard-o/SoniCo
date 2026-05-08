@@ -135,16 +135,16 @@ const OwnerItems = () => {
                   <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs">
                     <div>
                       <p className="text-foreground/55">Add-on</p>
-                      <p className="font-medium">€{it.price_addon}</p>
+                      <p className="font-medium">${it.price_addon}</p>
                     </div>
                     <div>
                       <p className="text-foreground/55">Alquiler</p>
-                      <p className="font-medium">€{it.price_rental}</p>
+                      <p className="font-medium">${it.price_rental}</p>
                     </div>
                     {it.is_for_sale && it.sale_price != null && (
                       <div className="col-span-2">
                         <p className="text-foreground/55">Venta</p>
-                        <p className="font-medium">€{it.sale_price}</p>
+                        <p className="font-medium">${it.sale_price}</p>
                       </div>
                     )}
                   </div>

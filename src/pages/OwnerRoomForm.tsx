@@ -211,7 +211,7 @@ const OwnerRoomForm = () => {
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Precio por 30 min (€)</Label>
+                  <Label htmlFor="price">Precio por 30 min</Label>
                   <Input id="price" type="number" min={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
                 </div>
                 <div className="flex items-end justify-between rounded-sm border border-border p-3">

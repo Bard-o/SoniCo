@@ -232,7 +232,7 @@ const RoomDetail = () => {
                 <div className="p-6">
                   <p className="text-[11px] uppercase tracking-wider text-foreground/55">Precio</p>
                   <p className="mt-2 flex items-baseline gap-1.5">
-                    <span className="text-[42px] leading-none tracking-tight">€{room.price_per_half_hour}</span>
+                    <span className="text-[42px] leading-none tracking-tight">${room.price_per_half_hour}</span>
                     <span className="text-sm text-foreground/60">/ 30 min</span>
                   </p>
                   <p className="mt-2 text-xs text-foreground/60">Mínimo de reserva: 1 hora</p>

@@ -61,7 +61,7 @@ const Index = () => {
               <div>
                 <dt className="text-[11px] uppercase tracking-wider text-foreground/55">Desde</dt>
                 <dd className="mt-2 text-[36px] leading-none tracking-tight">
-                  {isLoading ? "—" : activeRooms.length > 0 ? `€${Math.min(...activeRooms.map((r) => r.price_per_half_hour))}` : "—"}
+                  {isLoading ? "—" : activeRooms.length > 0 ? `$${Math.min(...activeRooms.map((r) => r.price_per_half_hour))}` : "—"}
                   <span className="text-sm text-foreground/55">/30m</span>
                 </dd>
               </div>

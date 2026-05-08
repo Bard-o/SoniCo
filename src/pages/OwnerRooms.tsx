@@ -101,7 +101,7 @@ const OwnerRooms = () => {
                     <div className="min-w-0">
                       <h3 className="truncate text-lg tracking-tight">{r.name}</h3>
                       <p className="mt-1 text-sm text-foreground/65">
-                        €{r.price_per_half_hour} / 30 min
+                        ${r.price_per_half_hour} / 30 min
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">

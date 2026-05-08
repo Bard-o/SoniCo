@@ -57,7 +57,7 @@ export const RoomCard = ({ room }: RoomCardProps) => {
         )}
         <div className="absolute bottom-3 left-3">
           <span className="inline-flex items-baseline gap-1 rounded-sm bg-background px-2.5 py-1.5 text-xs">
-            <span className="text-foreground">€{r.pricePerHalfHour}</span>
+            <span className="text-foreground">${r.pricePerHalfHour}</span>
             <span className="text-foreground/60">/ 30 min</span>
           </span>
         </div>
