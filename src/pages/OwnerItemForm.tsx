@@ -27,7 +27,7 @@ const OwnerItemForm = () => {
 
   const { create, update } = useItems();
   const { item, isLoading: itemLoading, refetch: refetchItem } = useItem(id ?? "");
-  const { upload, isUploading } = usePhotoUpload();
+  const { upload, isUploading, remove: deletePhoto } = usePhotoUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Track files selected by user but not yet saved — upload only happens on "Guardar"
   const pendingUploadsRef = useRef<{ file: File; blobUrl: string }[]>([]);
@@ -74,6 +74,9 @@ const OwnerItemForm = () => {
     if (removed.startsWith("blob:")) {
       URL.revokeObjectURL(removed);
       pendingUploadsRef.current = pendingUploadsRef.current.filter((p) => p.blobUrl !== removed);
+    } else if (removed.startsWith("http")) {
+      // Already uploaded — delete from storage
+      deletePhoto(removed);
     }
     setPhotos((p) => p.filter((_, idx) => idx !== i));
   };

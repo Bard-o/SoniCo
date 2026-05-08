@@ -17,16 +17,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRooms } from "@/hooks/useRooms";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { cn } from "@/lib/utils";
 
 const OwnerRooms = () => {
   const { rooms, isLoading, error, refetch, update, remove } = useRooms();
+  const { remove: deletePhoto } = usePhotoUpload();
 
   const toggleActive = async (room: { id: string; slug: string; is_active: boolean; name: string }) => {
     await update(room.id, { is_active: !room.is_active });
   };
 
-  const handleRemove = async (id: string) => {
+  const handleRemove = async (id: string, photos: string[]) => {
+    // Delete stored photos from bucket before deleting the DB row
+    for (const url of photos) {
+      if (url && url.startsWith("http")) {
+        await deletePhoto(url);
+      }
+    }
     await remove(id);
   };
 
@@ -138,7 +146,7 @@ const OwnerRooms = () => {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => handleRemove(r.id)}
+                            onClick={() => handleRemove(r.id, r.photos ?? [])}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Eliminar

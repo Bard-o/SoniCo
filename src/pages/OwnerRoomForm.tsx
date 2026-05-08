@@ -50,7 +50,7 @@ const OwnerRoomForm = () => {
   const { room, isLoading: roomLoading, refetch: refetchRoom } = useRoom(slug ?? "");
   const { linkedItems, isLoading: linksLoading, link, unlink, refetch: refetchLinks } = useRoomItems(room?.id ?? "");
   const { items: allItems } = useItems();
-  const { upload, isUploading } = usePhotoUpload();
+  const { upload, isUploading, remove: deletePhoto } = usePhotoUpload();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingUploadsRef = useRef<{ file: File; blobUrl: string }[]>([]);
@@ -95,6 +95,9 @@ const OwnerRoomForm = () => {
     if (removed.startsWith("blob:")) {
       URL.revokeObjectURL(removed);
       pendingUploadsRef.current = pendingUploadsRef.current.filter((p) => p.blobUrl !== removed);
+    } else if (removed.startsWith("http")) {
+      // Already uploaded — delete from storage
+      deletePhoto(removed);
     }
     setPhotos((p) => p.filter((_, idx) => idx !== i));
   };

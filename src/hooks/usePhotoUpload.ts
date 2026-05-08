@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { supabase, MEDIA_BUCKET } from "@/lib/supabase";
+import { supabase, supabaseUrl, MEDIA_BUCKET } from "@/lib/supabase";
 import { MAX_PHOTO_SIZE_MB, ACCEPTED_PHOTO_TYPES } from "@/config/constants";
 import { useToast } from "./use-toast";
 
 const MAX_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
+
+/** Extract the bucket-relative path from a public Storage URL. */
+function extractStoragePath(publicUrl: string, bucket: string): string | null {
+  const prefix = `${supabaseUrl}/storage/v1/object/public/${bucket}/`;
+  return publicUrl.startsWith(prefix) ? publicUrl.slice(prefix.length) : null;
+}
 
 export function usePhotoUpload(bucket: string = MEDIA_BUCKET) {
   const [isUploading, setIsUploading] = useState(false);
@@ -51,5 +57,16 @@ export function usePhotoUpload(bucket: string = MEDIA_BUCKET) {
     return urlData.publicUrl;
   };
 
-  return { upload, isUploading, error };
+  /** Delete a photo from the storage bucket by its public URL. */
+  const remove = async (publicUrl: string): Promise<void> => {
+    const path = extractStoragePath(publicUrl, bucket);
+    if (!path) return; // Not a storage URL (e.g. blob), nothing to delete
+
+    const { error: removeError } = await supabase.storage.from(bucket).remove([path]);
+    if (removeError) {
+      console.error("[PhotoUpload] Delete error:", removeError.message);
+    }
+  };
+
+  return { upload, isUploading, error, remove };
 }
