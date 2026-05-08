@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ReactNode, useState } from "react";
-import { Bell, ChevronDown, LogOut, User } from "lucide-react";
+import { AlertTriangle, Bell, ChevronDown, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -65,17 +65,34 @@ export const AppShell = ({
   children: ReactNode;
 }) => {
   const navigate = useNavigate();
-  const { profile, signOut, isLoading } = useAuth();
+  const { profile, signOut, isLoading, error } = useAuth();
   const [notifications, setNotifications] = useState(sampleNotifications);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  // Don't render authenticated UI until profile is loaded
-  if (isLoading || !profile) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="text-sm text-foreground/60">Cargando…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <p className="max-w-sm text-sm text-foreground/80">
+            {error || "No se pudo cargar el perfil. Intenta recargar la página."}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Recargar
+          </Button>
         </div>
       </div>
     );
