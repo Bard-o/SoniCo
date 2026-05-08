@@ -32,14 +32,22 @@ export function useItems(categoryFilter?: ItemCategory) {
   }, [categoryFilter]);
 
   const create = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
-    const { data, error } = await supabase.from("items").insert(item).select().single();
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      throw error;
+    console.log("[useItems.create] called with:", JSON.stringify(item, null, 2));
+    try {
+      const { data, error } = await supabase.from("items").insert(item).select().single();
+      console.log("[useItems.create] result:", { data, error });
+      if (error) {
+        console.error("[useItems.create] error:", error);
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        throw error;
+      }
+      toast({ title: "Ítem creado", description: `${data.name} creado con éxito.` });
+      await fetchItems();
+      return data;
+    } catch (err) {
+      console.error("[useItems.create] unexpected error:", err);
+      throw err;
     }
-    toast({ title: "Ítem creado", description: `${data.name} creado con éxito.` });
-    await fetchItems();
-    return data;
   };
 
   const update = async (id: string, updates: Partial<Item>) => {

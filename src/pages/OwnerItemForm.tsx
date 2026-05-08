@@ -78,6 +78,7 @@ const OwnerItemForm = () => {
     setIsSaving(true);
     try {
       if (editing && id) {
+        console.log("[OwnerItemForm] updating item:", id);
         await update(id, {
           name,
           description,
@@ -90,7 +91,9 @@ const OwnerItemForm = () => {
           is_for_sale: forSale,
           sale_price: forSale ? salePrice : null,
         });
+        console.log("[OwnerItemForm] update done");
       } else {
+        console.log("[OwnerItemForm] creating new item");
         await create({
           name,
           description,
@@ -103,9 +106,11 @@ const OwnerItemForm = () => {
           is_for_sale: forSale,
           sale_price: forSale ? salePrice : null,
         });
+        console.log("[OwnerItemForm] create done");
       }
       navigate("/owner/items");
     } catch (err: unknown) {
+      console.error("[OwnerItemForm] save error:", err);
       setSaveError(err instanceof Error ? err.message : "Error al guardar");
     } finally {
       setIsSaving(false);
