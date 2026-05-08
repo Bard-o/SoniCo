@@ -34,16 +34,23 @@ export function useItems(categoryFilter?: ItemCategory) {
   const create = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
     console.log("[useItems.create] called with:", JSON.stringify(item, null, 2));
     try {
-      const { data, error } = await supabase.from("items").insert(item).select().single();
-      console.log("[useItems.create] result:", { data, error });
+      const result = await supabase.from("items").insert(item).select();
+      console.log("[useItems.create] result:", result);
+      const { data, error } = result;
       if (error) {
         console.error("[useItems.create] error:", error);
         toast({ title: "Error", description: error.message, variant: "destructive" });
         throw error;
       }
-      toast({ title: "Ítem creado", description: `${data.name} creado con éxito.` });
+      const created = data?.[0];
+      if (!created) {
+        const msg = "No se recibió confirmación del servidor";
+        console.error("[useItems.create]", msg);
+        throw new Error(msg);
+      }
+      toast({ title: "Ítem creado", description: `${created.name} creado con éxito.` });
       await fetchItems();
-      return data;
+      return created;
     } catch (err) {
       console.error("[useItems.create] unexpected error:", err);
       throw err;
