@@ -52,6 +52,7 @@ export function useRoomItems(roomId: string) {
   }, [fetchLinkedItems]);
 
   const getAvailableQuantity = async (itemId: string): Promise<number> => {
+    if (!roomId) return 0;
     // Get total quantity of item
     const { data: item } = await supabase
       .from("items")

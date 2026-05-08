@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { DoorOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -82,8 +82,19 @@ const OwnerRooms = () => {
             ))}
           </div>
         ) : rooms.length === 0 ? (
-          <div className="card-surface mt-6 bg-card p-16 text-center">
-            <p className="text-foreground/60">Aún no tienes salas. Crea la primera para empezar.</p>
+          <div className="card-surface mt-6 flex flex-col items-center gap-4 bg-card p-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-foreground/40">
+              <DoorOpen className="h-8 w-8" />
+            </div>
+            <div>
+              <p className="text-lg font-medium">No hay salas todavía</p>
+              <p className="mt-1 text-sm text-foreground/60">Creá la primera sala para empezar a recibir reservas.</p>
+            </div>
+            <Button asChild variant="cta" size="lg" className="mt-2 gap-2">
+              <Link to="/owner/rooms/new">
+                <Plus className="h-4 w-4" /> Crear primera sala
+              </Link>
+            </Button>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
