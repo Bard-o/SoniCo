@@ -4,7 +4,8 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Info, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { rooms } from "@/data/rooms";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRoom } from "@/hooks/useRoom";
 import {
   Accordion,
   AccordionContent,
@@ -20,18 +21,59 @@ const bookedKey = new Set([
 
 const RoomDetail = () => {
   const { slug } = useParams();
-  const room = rooms.find((r) => r.slug === slug) ?? rooms[0];
-  const [active, setActive] = useState(0);
+  const { room, linkedItems, isLoading, error } = useRoom(slug ?? "");
+
+  const [activePhoto, setActivePhoto] = useState(0);
 
   const groupedItems = useMemo(() => {
-    const map = new Map<string, typeof room.items>();
-    room.items.forEach((it) => {
+    const map = new Map<string, typeof linkedItems>();
+    linkedItems.forEach((it) => {
       const arr = map.get(it.category) ?? [];
       arr.push(it);
       map.set(it.category, arr);
     });
     return Array.from(map.entries());
-  }, [room]);
+  }, [linkedItems]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <div className="gradient-warm border-b border-border">
+          <div className="container-app py-8">
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="container-app py-12">
+          <Skeleton className="aspect-[16/10] w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !room) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <div className="gradient-warm border-b border-border">
+          <div className="container-app py-8">
+            <Link to="/rooms" className="inline-flex items-center gap-1.5 text-sm text-foreground/60 hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" /> Volver al catálogo
+            </Link>
+          </div>
+        </div>
+        <div className="container-app py-16 text-center">
+          <p className="text-foreground/60">Sala no encontrada o no disponible.</p>
+          <Button asChild className="mt-4" variant="cta">
+            <Link to="/rooms">Ver todas las salas</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const photos = room.photos?.length > 0 ? room.photos : [];
+  const currentPhoto = photos[activePhoto] || "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,33 +92,41 @@ const RoomDetail = () => {
           {/* LEFT */}
           <div className="lg:col-span-8">
             {/* Gallery */}
-            <div className="overflow-hidden rounded-sm shadow-warm">
-              <img
-                src={room.gallery[active]}
-                alt={room.name}
-                width={1280}
-                height={896}
-                className="aspect-[16/10] w-full object-cover"
-              />
-            </div>
-            <div className="mt-3 flex gap-3">
-              {room.gallery.map((g, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActive(i)}
-                  className={`relative h-20 w-28 overflow-hidden rounded-sm transition-all ${
-                    i === active ? "ring-2 ring-primary" : "opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <img src={g} alt="" loading="lazy" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {photos.length > 0 ? (
+              <>
+                <div className="overflow-hidden rounded-sm shadow-warm">
+                  <img
+                    src={currentPhoto}
+                    alt={room.name}
+                    width={1280}
+                    height={896}
+                    className="aspect-[16/10] w-full object-cover"
+                  />
+                </div>
+                <div className="mt-3 flex gap-3">
+                  {photos.map((g, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActivePhoto(i)}
+                      className={`relative h-20 w-28 overflow-hidden rounded-sm transition-all ${
+                        i === activePhoto ? "ring-2 ring-primary" : "opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <img src={g} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="aspect-[16/10] w-full overflow-hidden rounded-sm bg-muted flex items-center justify-center">
+                <span className="text-foreground/40 text-sm">Sin fotos</span>
+              </div>
+            )}
 
             {/* Heading */}
             <div className="mt-12">
               <div className="flex flex-wrap items-center gap-2">
-                {room.available ? (
+                {room.is_active ? (
                   <span className="inline-flex items-center gap-1.5 rounded-sm bg-foreground px-2.5 py-1 text-[11px] uppercase tracking-wider text-background">
                     <span className="h-1.5 w-1.5 rounded-full bg-sunshine" /> Disponible
                   </span>
@@ -89,36 +139,38 @@ const RoomDetail = () => {
             </div>
 
             {/* Included items */}
-            <div className="mt-12 card-surface p-6 sm:p-8">
-              <div className="flex items-center gap-2">
-                <h2 className="sub-heading">Incluido en esta sala</h2>
-                <Info className="h-4 w-4 text-foreground/50" />
+            {linkedItems.length > 0 ? (
+              <div className="mt-12 card-surface p-6 sm:p-8">
+                <div className="flex items-center gap-2">
+                  <h2 className="sub-heading">Incluido en esta sala</h2>
+                  <Info className="h-4 w-4 text-foreground/50" />
+                </div>
+                <Accordion type="multiple" defaultValue={[groupedItems[0]?.[0]]} className="mt-5">
+                  {groupedItems.map(([cat, items]) => (
+                    <AccordionItem key={cat} value={cat} className="border-foreground/10">
+                      <AccordionTrigger className="hover:no-underline">
+                        <span className="flex items-center gap-3">
+                          <span className="chip-primary">{cat}</span>
+                          <span className="text-sm text-foreground/60">{items.length} ítems</span>
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="divide-y divide-foreground/10">
+                          {items.map((it) => (
+                            <li key={it.id} className="flex items-center justify-between py-3">
+                              <span className="text-sm">{it.name}</span>
+                              {(it as { linkedQuantity?: number }).linkedQuantity > 1 && (
+                                <span className="text-xs text-foreground/60">×{(it as { linkedQuantity?: number }).linkedQuantity}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
-              <Accordion type="multiple" defaultValue={[groupedItems[0]?.[0]]} className="mt-5">
-                {groupedItems.map(([cat, items]) => (
-                  <AccordionItem key={cat} value={cat} className="border-foreground/10">
-                    <AccordionTrigger className="hover:no-underline">
-                      <span className="flex items-center gap-3">
-                        <span className="chip-primary">{cat}</span>
-                        <span className="text-sm text-foreground/60">{items.length} ítems</span>
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <ul className="divide-y divide-foreground/10">
-                        {items.map((it) => (
-                          <li key={it.name} className="flex items-center justify-between py-3">
-                            <span className="text-sm">{it.name}</span>
-                            {it.qty > 1 && (
-                              <span className="text-xs text-foreground/60">×{it.qty}</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
+            ) : null}
 
             {/* Calendar */}
             <div className="mt-10 card-surface p-6 sm:p-8">
@@ -149,7 +201,7 @@ const RoomDetail = () => {
                           return (
                             <button
                               key={`${di}-${time}`}
-                              disabled={isBooked || !room.available}
+                              disabled={isBooked || !room.is_active}
                               className={`group relative h-8 rounded-sm text-[10px] transition-all ${
                                 isBooked
                                   ? "bg-foreground/10 text-foreground/40"
@@ -180,14 +232,14 @@ const RoomDetail = () => {
                 <div className="p-6">
                   <p className="text-[11px] uppercase tracking-wider text-foreground/55">Precio</p>
                   <p className="mt-2 flex items-baseline gap-1.5">
-                    <span className="text-[42px] leading-none tracking-tight">${room.pricePerHalfHour}</span>
+                    <span className="text-[42px] leading-none tracking-tight">€{room.price_per_half_hour}</span>
                     <span className="text-sm text-foreground/60">/ 30 min</span>
                   </p>
                   <p className="mt-2 text-xs text-foreground/60">Mínimo de reserva: 1 hora</p>
                 </div>
                 <div className="border-t border-foreground/10 p-6">
-                  <Button size="lg" variant="cta" className="w-full" disabled={!room.available}>
-                    {room.available ? "Inicia sesión para reservar" : "No disponible"}
+                  <Button size="lg" variant="cta" className="w-full" disabled={!room.is_active}>
+                    {room.is_active ? "Inicia sesión para reservar" : "No disponible"}
                   </Button>
                   <p className="mt-3 text-center text-xs text-foreground/60">
                     Pago en estudio · Cancelación gratuita 24h antes
@@ -195,11 +247,9 @@ const RoomDetail = () => {
                 </div>
                 <div className="border-t border-foreground/10 bg-cream p-6">
                   <p className="text-sm">{room.name}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {room.categories.map((c) => (
-                      <span key={c} className="chip">{c}</span>
-                    ))}
-                  </div>
+                  {room.description && (
+                    <p className="mt-2 text-xs text-foreground/55 line-clamp-3">{room.description}</p>
+                  )}
                 </div>
               </div>
             </div>

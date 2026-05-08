@@ -1,7 +1,13 @@
 import { ArrowUpRight, CalendarCheck, Clock, DoorOpen, Inbox } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { rooms } from "@/data/rooms";
+
+// Minimal stub — rooms wiring deferred to Iteración 3
+const rooms = [
+  { name: "Studio A — The Live Room", slug: "studio-a" },
+  { name: "Studio B — The Vintage Room", slug: "studio-b" },
+  { name: "Studio C — The Composer Suite", slug: "studio-c" },
+];
 
 const stats = [
   { label: "Solicitudes pendientes", value: "4", hint: "Requieren tu revisión", icon: Inbox, accent: true },

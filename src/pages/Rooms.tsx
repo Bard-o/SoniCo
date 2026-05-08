@@ -1,9 +1,13 @@
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { RoomCard } from "@/components/RoomCard";
-import { rooms } from "@/data/rooms";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRooms } from "@/hooks/useRooms";
 
 const Rooms = () => {
+  const { rooms, isLoading } = useRooms();
+  const activeRooms = rooms.filter((r) => r.is_active);
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -19,11 +23,29 @@ const Rooms = () => {
 
       <section className="py-16 lg:py-20">
         <div className="container-app">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {rooms.map((r) => (
-              <RoomCard key={r.slug} room={r} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="card-surface overflow-hidden bg-card">
+                  <Skeleton className="aspect-[4/3] w-full" />
+                  <div className="p-5 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : activeRooms.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-foreground/60">No hay salas activas en este momento. ¡Vuelve pronto!</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {activeRooms.map((r) => (
+                <RoomCard key={r.id} room={r} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
       <SiteFooter />
