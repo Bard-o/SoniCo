@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, Calendar, Headphones, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { RoomCard } from "@/components/RoomCard";
-import { rooms } from "@/data/rooms";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRooms } from "@/hooks/useRooms";
 import heroImg from "@/assets/hero.jpg";
 
 const features = [
@@ -14,6 +16,9 @@ const features = [
 ];
 
 const Index = () => {
+  const { rooms, isLoading } = useRooms();
+  const activeRooms = rooms.filter((r) => r.is_active);
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -47,7 +52,7 @@ const Index = () => {
             <dl className="mt-14 grid max-w-lg grid-cols-3 gap-6 border-t border-foreground/10 pt-8">
               <div>
                 <dt className="text-[11px] uppercase tracking-wider text-foreground/55">Salas</dt>
-                <dd className="mt-2 text-[36px] leading-none tracking-tight">{rooms.length}</dd>
+                <dd className="mt-2 text-[36px] leading-none tracking-tight">{isLoading ? "—" : activeRooms.length}</dd>
               </div>
               <div>
                 <dt className="text-[11px] uppercase tracking-wider text-foreground/55">Disponibilidad</dt>
@@ -55,7 +60,10 @@ const Index = () => {
               </div>
               <div>
                 <dt className="text-[11px] uppercase tracking-wider text-foreground/55">Desde</dt>
-                <dd className="mt-2 text-[36px] leading-none tracking-tight">$14<span className="text-sm text-foreground/55">/30m</span></dd>
+                <dd className="mt-2 text-[36px] leading-none tracking-tight">
+                  {isLoading ? "—" : activeRooms.length > 0 ? `$${Math.min(...activeRooms.map((r) => r.price_per_half_hour))}` : "—"}
+                  <span className="text-sm text-foreground/55">/30m</span>
+                </dd>
               </div>
             </dl>
           </div>
@@ -116,9 +124,26 @@ const Index = () => {
           </div>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {rooms.map((r) => (
-              <RoomCard key={r.slug} room={r} />
-            ))}
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <div key={i} className="card-surface overflow-hidden bg-card">
+                  <Skeleton className="aspect-[4/3] w-full" />
+                  <div className="p-5 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              ))
+            ) : activeRooms.length === 0 ? (
+              <div className="col-span-full py-16 text-center">
+                <p className="text-foreground/60">No hay salas activas en este momento.</p>
+              </div>
+            ) : (
+              activeRooms.map((r) => (
+                <RoomCard key={r.id} room={r} />
+              ))
+            )}
           </div>
         </div>
       </section>

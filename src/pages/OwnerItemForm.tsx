@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ImagePlus, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -14,30 +14,148 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { items as seedItems, itemCategories } from "@/data/items";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useItems } from "@/hooks/useItems";
+import { useItem } from "@/hooks/useItem";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { ITEM_CATEGORIES, type ItemCategory } from "@/types/database";
 
 const OwnerItemForm = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const editing = Boolean(id);
-  const existing = seedItems.find((i) => i.id === id);
 
-  const [name, setName] = useState(existing?.name ?? "");
-  const [description, setDescription] = useState(existing?.description ?? "");
-  const [category, setCategory] = useState<string>(existing?.category ?? itemCategories[0]);
-  const [photos, setPhotos] = useState<string[]>(existing?.image ? [existing.image] : []);
-  const [totalQty, setTotalQty] = useState<number>(existing?.totalQty ?? 1);
-  const [addonPrice, setAddonPrice] = useState<number>(existing?.addonPrice ?? 0);
-  const [rentalPrice, setRentalPrice] = useState<number>(existing?.rentalPrice ?? 0);
-  const [availableForRental, setAvailableForRental] = useState<boolean>(existing?.availableForRental ?? true);
-  const [forSale, setForSale] = useState<boolean>(existing?.forSale ?? false);
-  const [salePrice, setSalePrice] = useState<number>(existing?.salePrice ?? 0);
+  const { create, update } = useItems();
+  const { item, isLoading: itemLoading, refetch: refetchItem } = useItem(id ?? "");
+  const { upload, isUploading, remove: deletePhoto } = usePhotoUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Track files selected by user but not yet saved — upload only happens on "Guardar"
+  const pendingUploadsRef = useRef<{ file: File; blobUrl: string }[]>([]);
 
-  const removePhoto = (i: number) => setPhotos((p) => p.filter((_, idx) => idx !== i));
-  const addPhotoPlaceholder = () => {
-    if (photos.length >= 4) return;
-    setPhotos((p) => [...p, ""]);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<ItemCategory>(ITEM_CATEGORIES[0]);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [totalQty, setTotalQty] = useState<number>(1);
+  const [addonPrice, setAddonPrice] = useState<number>(0);
+  const [rentalPrice, setRentalPrice] = useState<number>(0);
+  const [availableForRental, setAvailableForRental] = useState<boolean>(true);
+  const [forSale, setForSale] = useState<boolean>(false);
+  const [salePrice, setSalePrice] = useState<number>(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Populate form when editing an existing item
+  useEffect(() => {
+    if (item) {
+      setName(item.name);
+      setDescription(item.description);
+      setCategory(item.category);
+      setPhotos(item.photos ?? []);
+      setTotalQty(item.quantity);
+      setAddonPrice(Number(item.price_addon));
+      setRentalPrice(Number(item.price_rental));
+      setAvailableForRental(item.is_available_for_rental);
+      setForSale(item.is_for_sale);
+      setSalePrice(Number(item.sale_price ?? 0));
+    }
+  }, [item]);
+
+  // Cleanup blob URLs on unmount (user leaves without saving)
+  useEffect(() => {
+    return () => {
+      pendingUploadsRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+      pendingUploadsRef.current = [];
+    };
+  }, []);
+
+  const removePhoto = (i: number) => {
+    const removed = photos[i];
+    if (removed.startsWith("blob:")) {
+      URL.revokeObjectURL(removed);
+      pendingUploadsRef.current = pendingUploadsRef.current.filter((p) => p.blobUrl !== removed);
+    } else if (removed.startsWith("http")) {
+      // Already uploaded — delete from storage
+      deletePhoto(removed);
+    }
+    setPhotos((p) => p.filter((_, idx) => idx !== i));
   };
+
+  // User selects a file → show local preview, defer upload to save
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (photos.length >= 4) return;
+    const blobUrl = URL.createObjectURL(file);
+    pendingUploadsRef.current.push({ file, blobUrl });
+    setPhotos((p) => [...p, blobUrl]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSave = async () => {
+    setSaveError(null);
+    setIsSaving(true);
+    try {
+      // Upload pending photos FIRST — replace blob URLs with real Storage URLs
+      let finalPhotos = [...photos];
+      if (pendingUploadsRef.current.length > 0) {
+        for (const pending of pendingUploadsRef.current) {
+          const realUrl = await upload(pending.file, `items/${id ?? "new"}`);
+          const idx = finalPhotos.indexOf(pending.blobUrl);
+          if (idx !== -1) finalPhotos[idx] = realUrl;
+        }
+        pendingUploadsRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+        pendingUploadsRef.current = [];
+      }
+      setPhotos(finalPhotos);
+
+      if (editing && id) {
+        await update(id, {
+          name,
+          description,
+          category,
+          photos: finalPhotos,
+          quantity: totalQty,
+          price_addon: addonPrice,
+          price_rental: rentalPrice,
+          is_available_for_rental: availableForRental,
+          is_for_sale: forSale,
+          sale_price: forSale ? salePrice : null,
+        });
+      } else {
+        await create({
+          name,
+          description,
+          category,
+          photos: finalPhotos,
+          quantity: totalQty,
+          price_addon: addonPrice,
+          price_rental: rentalPrice,
+          is_available_for_rental: availableForRental,
+          is_for_sale: forSale,
+          sale_price: forSale ? salePrice : null,
+        });
+      }
+      navigate("/owner/items");
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : "Error al guardar");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (editing && itemLoading) {
+    return (
+      <AppShell role="owner">
+        <section className="border-b border-border gradient-warm">
+          <div className="container-app py-10">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="mt-4 h-12 w-64" />
+          </div>
+        </section>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell role="owner">
@@ -66,10 +184,10 @@ const OwnerItemForm = () => {
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Categoría</Label>
-                  <Select value={category} onValueChange={setCategory}>
+                  <Select value={category} onValueChange={(v) => setCategory(v as ItemCategory)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {itemCategories.map((c) => (
+                      {ITEM_CATEGORIES.map((c) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
@@ -105,27 +223,26 @@ const OwnerItemForm = () => {
                 </div>
               ))}
               {photos.length < 4 && (
-                <button
-                  onClick={addPhotoPlaceholder}
-                  className="flex aspect-square flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-foreground/25 text-foreground/55 transition hover:border-foreground/45 hover:text-foreground"
-                >
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-foreground/25 text-foreground/55 transition hover:border-foreground/45 hover:text-foreground">
                   <ImagePlus className="h-5 w-5" />
                   <span className="text-xs">Subir</span>
-                </button>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+                </label>
               )}
             </div>
+            {isUploading && <p className="mt-2 text-xs text-foreground/55">Subiendo foto…</p>}
           </div>
 
           <div className="card-surface bg-card p-6">
             <h2 className="sub-heading">Precios y disponibilidad</h2>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="addon">Add-on por reserva (€)</Label>
+                <Label htmlFor="addon">Add-on por reserva</Label>
                 <Input id="addon" type="number" min={0} value={addonPrice} onChange={(e) => setAddonPrice(Number(e.target.value))} />
                 <p className="text-xs text-foreground/55">Precio cuando se añade a una reserva de sala.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rental">Precio de alquiler (€)</Label>
+                <Label htmlFor="rental">Precio de alquiler</Label>
                 <Input id="rental" type="number" min={0} value={rentalPrice} onChange={(e) => setRentalPrice(Number(e.target.value))} />
                 <p className="text-xs text-foreground/55">Precio para alquileres standalone.</p>
               </div>
@@ -148,24 +265,19 @@ const OwnerItemForm = () => {
               </div>
               {forSale && (
                 <div className="space-y-2">
-                  <Label htmlFor="sale">Precio de venta (€)</Label>
+                  <Label htmlFor="sale">Precio de venta</Label>
                   <Input id="sale" type="number" min={0} value={salePrice} onChange={(e) => setSalePrice(Number(e.target.value))} />
                 </div>
               )}
             </div>
           </div>
 
-          {editing && existing && existing.linkedRooms.length > 0 && (
+          {editing && item && (
             <div className="card-surface bg-card p-6">
               <h2 className="sub-heading">Enlaces actuales</h2>
               <p className="mt-1 text-sm text-foreground/65">Salas a las que este item está asignado.</p>
               <div className="mt-5 divide-y divide-border">
-                {existing.linkedRooms.map((r) => (
-                  <div key={r.roomName} className="flex items-center justify-between py-3 text-sm">
-                    <span>{r.roomName}</span>
-                    <span className="text-foreground/55">{r.qty} unidad{r.qty > 1 ? "es" : ""}</span>
-                  </div>
-                ))}
+                <p className="py-4 text-center text-sm text-foreground/55">Consultar salas enlazadas.</p>
               </div>
             </div>
           )}
@@ -174,9 +286,10 @@ const OwnerItemForm = () => {
         <aside className="lg:sticky lg:top-24 lg:h-fit">
           <div className="card-surface bg-card p-6">
             <h3 className="text-sm font-medium uppercase tracking-wider text-foreground/60">Acciones</h3>
+            {saveError && <p className="mt-2 text-xs text-destructive">{saveError}</p>}
             <div className="mt-4 flex flex-col gap-2">
-              <Button variant="cta" size="lg" onClick={() => navigate("/owner/items")}>
-                {editing ? "Guardar cambios" : "Crear item"}
+              <Button variant="cta" size="lg" onClick={handleSave} disabled={isSaving || !name}>
+                {isSaving ? "Guardando…" : editing ? "Guardar cambios" : "Crear item"}
               </Button>
               <Button variant="outline" size="lg" onClick={() => navigate("/owner/items")}>
                 Cancelar

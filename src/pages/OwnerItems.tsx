@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Boxes, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -14,19 +14,28 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { items as seedItems, itemCategories } from "@/data/items";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useItems } from "@/hooks/useItems";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { ITEM_CATEGORIES, type ItemCategory } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 const OwnerItems = () => {
-  const [items, setItems] = useState(seedItems);
-  const [category, setCategory] = useState<string>("Todas");
-
-  const filtered = useMemo(
-    () => (category === "Todas" ? items : items.filter((i) => i.category === category)),
-    [items, category],
+  const [category, setCategory] = useState<ItemCategory | "Todas">("Todas");
+  const { items, isLoading, error, refetch, remove } = useItems(
+    category === "Todas" ? undefined : category
   );
+  const { remove: deletePhoto } = usePhotoUpload();
 
-  const remove = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
+  const handleRemove = async (id: string, photos: string[]) => {
+    // Delete stored photos from bucket before deleting the DB row
+    for (const url of photos) {
+      if (url && url.startsWith("http")) {
+        await deletePhoto(url);
+      }
+    }
+    await remove(id);
+  };
 
   return (
     <AppShell role="owner">
@@ -49,7 +58,21 @@ const OwnerItems = () => {
 
       <section className="container-app py-10">
         <div className="flex flex-wrap gap-2">
-          {["Todas", ...itemCategories].map((c) => (
+          {(["Todas"] as const).map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={cn(
+                "rounded-sm border px-3 py-1.5 text-xs uppercase tracking-wider transition",
+                category === c
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-card text-foreground/70 hover:text-foreground",
+              )}
+            >
+              {c}
+            </button>
+          ))}
+          {ITEM_CATEGORIES.map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
@@ -67,25 +90,46 @@ const OwnerItems = () => {
       </section>
 
       <section className="container-app pb-16">
-        {filtered.length === 0 ? (
+        {error && (
+          <div className="mb-6 flex items-center justify-between rounded-sm border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <p className="text-sm text-destructive">{error}</p>
+            <Button variant="outline" size="sm" onClick={refetch}>Reintentar</Button>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="card-surface flex flex-col overflow-hidden bg-card">
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
           <div className="card-surface bg-card p-16 text-center">
             <Boxes className="mx-auto h-8 w-8 text-foreground/40" />
-            <p className="mt-3 text-foreground/60">Sin items en esta categoría.</p>
+            <p className="mt-3 text-foreground/60">
+              {category === "Todas" ? "Aún no tienes equipo. Crea el primero para empezar." : "Sin items en esta categoría."}
+            </p>
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((it) => (
+            {items.map((it) => (
               <article key={it.id} className="card-surface flex flex-col overflow-hidden bg-card">
                 <div className="relative aspect-square overflow-hidden bg-secondary/60">
-                  {it.image ? (
-                    <img src={it.image} alt={it.name} className="h-full w-full object-cover" />
+                  {it.photos && it.photos[0] ? (
+                    <img src={it.photos[0]} alt={it.name} className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center text-foreground/30">
                       <Boxes className="h-10 w-10" />
                     </div>
                   )}
                   <span className="absolute left-3 top-3 chip">{it.category}</span>
-                  {!it.availableForRental && (
+                  {!it.is_available_for_rental && (
                     <span className="absolute right-3 top-3 inline-flex items-center rounded-sm bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-foreground/60">
                       No alquilable
                     </span>
@@ -94,33 +138,24 @@ const OwnerItems = () => {
 
                 <div className="flex flex-1 flex-col p-4">
                   <h3 className="text-[15px] tracking-tight">{it.name}</h3>
-                  <p className="mt-0.5 text-xs text-foreground/55">Stock total: {it.totalQty}</p>
+                  <p className="mt-0.5 text-xs text-foreground/55">Stock total: {it.quantity}</p>
 
                   <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs">
                     <div>
                       <p className="text-foreground/55">Add-on</p>
-                      <p className="font-medium">€{it.addonPrice}</p>
+                      <p className="font-medium">${it.price_addon}</p>
                     </div>
                     <div>
                       <p className="text-foreground/55">Alquiler</p>
-                      <p className="font-medium">€{it.rentalPrice}</p>
+                      <p className="font-medium">${it.price_rental}</p>
                     </div>
-                    {it.forSale && it.salePrice != null && (
+                    {it.is_for_sale && it.sale_price != null && (
                       <div className="col-span-2">
                         <p className="text-foreground/55">Venta</p>
-                        <p className="font-medium">€{it.salePrice}</p>
+                        <p className="font-medium">${it.sale_price}</p>
                       </div>
                     )}
                   </div>
-
-                  {it.linkedRooms.length > 0 && (
-                    <p className="mt-3 text-[11px] text-foreground/55">
-                      Enlazado a:{" "}
-                      <span className="text-foreground/75">
-                        {it.linkedRooms.map((r) => `${r.roomName} (×${r.qty})`).join(", ")}
-                      </span>
-                    </p>
-                  )}
 
                   <div className="mt-auto flex gap-2 pt-4">
                     <Button asChild variant="outline" size="sm" className="flex-1 gap-1.5">
@@ -138,15 +173,13 @@ const OwnerItems = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>¿Eliminar "{it.name}"?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {it.linkedRooms.length > 0
-                              ? `Este item está enlazado a ${it.linkedRooms.length} sala(s). Al eliminarlo se desenlazará automáticamente.`
-                              : "Esta acción no se puede deshacer."}
+                            Esta acción no se puede deshacer. Al eliminarlo se desenlazará automáticamente de las salas.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => remove(it.id)}
+                            onClick={() => handleRemove(it.id, it.photos ?? [])}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Eliminar

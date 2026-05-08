@@ -2,8 +2,14 @@ import { Link } from "react-router-dom";
 import { Calendar, Clock, MoreHorizontal, Music2 } from "lucide-react";
 import { AppShell, StatusBadge } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { rooms } from "@/data/rooms";
 import { cn } from "@/lib/utils";
+
+// Minimal stub — rooms & reservations wiring deferred to Iteración 3
+const rooms = [
+  { name: "Studio A — The Live Room", image: "", slug: "studio-a", available: true, pricePerHalfHour: 18 },
+  { name: "Studio B — The Vintage Room", image: "", slug: "studio-b", available: true, pricePerHalfHour: 14 },
+  { name: "Studio C — The Composer Suite", image: "", slug: "studio-c", available: false, pricePerHalfHour: 22 },
+];
 
 type Status = "pending" | "confirmed" | "denied" | "cancelled";
 

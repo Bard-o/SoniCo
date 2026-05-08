@@ -1,5 +1,4 @@
 import { Instagram, Youtube } from "lucide-react";
-import { studioHours } from "@/data/rooms";
 
 export const SiteFooter = () => (
   <footer className="border-t border-border bg-cream">
@@ -16,7 +15,7 @@ export const SiteFooter = () => (
         </div>
         <div>
           <p className="eyebrow mb-4">Estudio</p>
-          <p className="text-sm">{studioHours}</p>
+          <p className="text-sm">Lun – Dom · 9:00 – 23:00</p>
           <p className="mt-1 text-sm text-foreground/70">Calle Resonancia 12, Madrid</p>
         </div>
         <div>
