@@ -29,6 +29,8 @@ const OwnerItemForm = () => {
   const { item, isLoading: itemLoading, refetch: refetchItem } = useItem(id ?? "");
   const { upload, isUploading } = usePhotoUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Track files selected by user but not yet saved — upload only happens on "Guardar"
+  const pendingUploadsRef = useRef<{ file: File; blobUrl: string }[]>([]);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -43,6 +45,7 @@ const OwnerItemForm = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Populate form when editing an existing item
   useEffect(() => {
     if (item) {
       setName(item.name);
@@ -58,18 +61,31 @@ const OwnerItemForm = () => {
     }
   }, [item]);
 
-  const removePhoto = (i: number) => setPhotos((p) => p.filter((_, idx) => idx !== i));
+  // Cleanup blob URLs on unmount (user leaves without saving)
+  useEffect(() => {
+    return () => {
+      pendingUploadsRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+      pendingUploadsRef.current = [];
+    };
+  }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const removePhoto = (i: number) => {
+    const removed = photos[i];
+    if (removed.startsWith("blob:")) {
+      URL.revokeObjectURL(removed);
+      pendingUploadsRef.current = pendingUploadsRef.current.filter((p) => p.blobUrl !== removed);
+    }
+    setPhotos((p) => p.filter((_, idx) => idx !== i));
+  };
+
+  // User selects a file → show local preview, defer upload to save
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (photos.length >= 4) return;
-    try {
-      const url = await upload(file, `items/${id ?? "new"}`);
-      setPhotos((p) => [...p, url]);
-    } catch {
-      // toast handles error
-    }
+    const blobUrl = URL.createObjectURL(file);
+    pendingUploadsRef.current.push({ file, blobUrl });
+    setPhotos((p) => [...p, blobUrl]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -77,13 +93,25 @@ const OwnerItemForm = () => {
     setSaveError(null);
     setIsSaving(true);
     try {
+      // Upload pending photos FIRST — replace blob URLs with real Storage URLs
+      let finalPhotos = [...photos];
+      if (pendingUploadsRef.current.length > 0) {
+        for (const pending of pendingUploadsRef.current) {
+          const realUrl = await upload(pending.file, `items/${id ?? "new"}`);
+          const idx = finalPhotos.indexOf(pending.blobUrl);
+          if (idx !== -1) finalPhotos[idx] = realUrl;
+        }
+        pendingUploadsRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+        pendingUploadsRef.current = [];
+      }
+      setPhotos(finalPhotos);
+
       if (editing && id) {
-        console.log("[OwnerItemForm] updating item:", id);
         await update(id, {
           name,
           description,
           category,
-          photos,
+          photos: finalPhotos,
           quantity: totalQty,
           price_addon: addonPrice,
           price_rental: rentalPrice,
@@ -91,14 +119,12 @@ const OwnerItemForm = () => {
           is_for_sale: forSale,
           sale_price: forSale ? salePrice : null,
         });
-        console.log("[OwnerItemForm] update done");
       } else {
-        console.log("[OwnerItemForm] creating new item");
         await create({
           name,
           description,
           category,
-          photos,
+          photos: finalPhotos,
           quantity: totalQty,
           price_addon: addonPrice,
           price_rental: rentalPrice,
@@ -106,11 +132,9 @@ const OwnerItemForm = () => {
           is_for_sale: forSale,
           sale_price: forSale ? salePrice : null,
         });
-        console.log("[OwnerItemForm] create done");
       }
       navigate("/owner/items");
     } catch (err: unknown) {
-      console.error("[OwnerItemForm] save error:", err);
       setSaveError(err instanceof Error ? err.message : "Error al guardar");
     } finally {
       setIsSaving(false);

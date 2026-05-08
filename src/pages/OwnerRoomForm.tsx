@@ -53,6 +53,7 @@ const OwnerRoomForm = () => {
   const { upload, isUploading } = usePhotoUpload();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingUploadsRef = useRef<{ file: File; blobUrl: string }[]>([]);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -81,28 +82,31 @@ const OwnerRoomForm = () => {
     }
   }, [room]);
 
-  const removePhoto = (i: number) => setPhotos((p) => p.filter((_, idx) => idx !== i));
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      pendingUploadsRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+      pendingUploadsRef.current = [];
+    };
+  }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !room?.id) return;
-    try {
-      const url = await upload(file, `rooms/${room.id}`);
-      setPhotos((p) => [...p, url]);
-    } catch {
-      // error already shown via toast
+  const removePhoto = (i: number) => {
+    const removed = photos[i];
+    if (removed.startsWith("blob:")) {
+      URL.revokeObjectURL(removed);
+      pendingUploadsRef.current = pendingUploadsRef.current.filter((p) => p.blobUrl !== removed);
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setPhotos((p) => p.filter((_, idx) => idx !== i));
   };
 
-  const addPhotoFromNew = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Show local preview immediately, upload only on save — avoids orphaned photos
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (photos.length >= 4) return;
-    // For new rooms, we need to save first to get an ID
-    // Use a placeholder URL approach - the user will need to save the room first
-    const url = URL.createObjectURL(file);
-    setPhotos((p) => [...p, url]);
+    const blobUrl = URL.createObjectURL(file);
+    pendingUploadsRef.current.push({ file, blobUrl });
+    setPhotos((p) => [...p, blobUrl]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -127,13 +131,26 @@ const OwnerRoomForm = () => {
     setSaveError(null);
     setIsSaving(true);
     try {
+      // Upload pending photos before saving
+      let finalPhotos = [...photos];
+      if (pendingUploadsRef.current.length > 0) {
+        for (const pending of pendingUploadsRef.current) {
+          const realUrl = await upload(pending.file, `rooms/${room?.id ?? "new"}`);
+          const idx = finalPhotos.indexOf(pending.blobUrl);
+          if (idx !== -1) finalPhotos[idx] = realUrl;
+        }
+        pendingUploadsRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
+        pendingUploadsRef.current = [];
+      }
+      setPhotos(finalPhotos);
+
       if (editing && room) {
         await update(room.id, {
           name,
           description,
           price_per_half_hour: price,
           is_active: active,
-          photos,
+          photos: finalPhotos,
           slug: slugify(name),
         });
       } else {
@@ -142,7 +159,7 @@ const OwnerRoomForm = () => {
           description,
           price_per_half_hour: price,
           is_active: active,
-          photos,
+          photos: finalPhotos,
           slug: slugify(name),
         });
         navigate(`/owner/rooms/${newRoom.slug}/edit`, { replace: true });
