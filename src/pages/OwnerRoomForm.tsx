@@ -258,7 +258,7 @@ const OwnerRoomForm = () => {
                     <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-foreground/25 text-foreground/55 transition hover:border-foreground/45 hover:text-foreground">
                       <ImagePlus className="h-5 w-5" />
                       <span className="text-xs">Subir</span>
-                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={addPhotoFromNew} />
+                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
                     </label>
                   )}
                 </div>
