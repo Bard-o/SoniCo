@@ -32,8 +32,7 @@ const OwnerItemForm = () => {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const ITEM_CATEGORIES_ARRAY = ITEM_CATEGORIES as unknown as string[];
-  const [category, setCategory] = useState<ItemCategory>(ITEM_CATEGORIES_ARRAY[0] as ItemCategory);
+  const [category, setCategory] = useState<ItemCategory>(ITEM_CATEGORIES[0]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [totalQty, setTotalQty] = useState<number>(1);
   const [addonPrice, setAddonPrice] = useState<number>(0);

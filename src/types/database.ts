@@ -1,5 +1,18 @@
 export type UserRole = "user" | "owner";
 
+export const ITEM_CATEGORIES = [
+  "Percusión",
+  "Amplificadores guitarra",
+  "Amplificadores bajo",
+  "Teclados",
+  "Micrófonos",
+  "Consola",
+  "Monitores",
+  "Pedales",
+  "Cables y accesorios",
+  "Otros",
+] as const;
+
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
 export interface Profile {
