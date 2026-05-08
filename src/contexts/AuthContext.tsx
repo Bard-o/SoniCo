@@ -51,8 +51,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const params = new URLSearchParams(hash.substring(1));
       const accessToken = params.get("access_token");
       const refreshToken = params.get("refresh_token");
+      console.log("[Auth] OAuth callback detected, tokens found:", !!accessToken, !!refreshToken);
       if (accessToken && refreshToken) {
-        // Clean the URL so tokens aren't visible in the address bar
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
         supabase.auth.setSession({
           access_token: accessToken,
@@ -62,32 +62,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // onAuthStateChange is the SINGLE source of truth for auth state.
-    // - INITIAL_SESSION fires immediately on subscribe (with existing session or null)
-    // - SIGNED_IN fires after login or OAuth setSession
-    // - TOKEN_REFRESHED fires silently when tokens rotate
-    // - SIGNED_OUT fires on explicit sign-out
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log("[Auth] onAuthStateChange:", event, "session:", !!newSession, "user:", newSession?.user?.id);
+
         if (event === "INITIAL_SESSION") {
           if (newSession) {
             setSession(newSession);
             setUser(newSession.user);
             const profileData = await fetchProfile(newSession.user.id);
+            console.log("[Auth] INITIAL_SESSION profile:", profileData?.role, profileData?.full_name);
             setProfile(profileData);
+          } else {
+            console.log("[Auth] INITIAL_SESSION: no session (not logged in)");
           }
           setIsLoading(false);
         } else if (event === "SIGNED_IN" && newSession) {
           setSession(newSession);
           setUser(newSession.user);
           const profileData = await fetchProfile(newSession.user.id);
+          console.log("[Auth] SIGNED_IN profile:", profileData?.role, profileData?.full_name);
           setProfile(profileData);
 
-          // Redirect based on role after fresh login
           const isAuthPage = ["/login", "/register"].includes(window.location.pathname);
           if (isAuthPage && profileData) {
+            console.log("[Auth] Redirecting to:", profileData.role === "owner" ? "/owner" : "/app");
             navigate(profileData.role === "owner" ? "/owner" : "/app", { replace: true });
           }
         } else if (event === "SIGNED_OUT" || !newSession) {
+          console.log("[Auth] SIGNED_OUT or null session");
           setSession(null);
           setUser(null);
           setProfile(null);
