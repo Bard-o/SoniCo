@@ -43,100 +43,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        // Recover OAuth tokens stashed by supabase.ts (hash cleaned before gotrue-js sees it)
-        const recoveryRaw = sessionStorage.getItem("supabase_oauth_recovery");
-        if (recoveryRaw) {
-          const { accessToken, refreshToken } = JSON.parse(recoveryRaw);
-          sessionStorage.removeItem("supabase_oauth_recovery");
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-        }
-
-        // Race getSession against a 10s timeout — gotrue-js can hang
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
-
-        const winner = await Promise.race([sessionPromise, timeoutPromise]);
-
-        let currentUserId: string | undefined;
-
-        if (winner && winner.data.session) {
-          // Normal path — getSession() resolved
-          const currentSession = winner.data.session;
-          setSession(currentSession);
-          setUser(currentSession.user);
-          currentUserId = currentSession.user.id;
-        } else {
-          // Timeout or null — fall back to localStorage, inject into supabase client
-          console.warn("[AuthContext] getSession() hang or null, falling back to localStorage");
-          const raw = localStorage.getItem("sb-rxudtsesweqyywqomcmf-auth-token");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed.access_token && parsed.refresh_token) {
-              try {
-                const { data: { session: restoredSession } } = await supabase.auth.setSession({
-                  access_token: parsed.access_token,
-                  refresh_token: parsed.refresh_token,
-                });
-                if (restoredSession) {
-                  setSession(restoredSession);
-                  setUser(restoredSession.user);
-                  currentUserId = restoredSession.user.id;
-                }
-              } catch (setSessionErr) {
-                console.error("[AuthContext] setSession failed:", setSessionErr);
-                // Last resort: use directly from localStorage
-                setSession({
-                  access_token: parsed.access_token,
-                  refresh_token: parsed.refresh_token,
-                  expires_at: parsed.expires_at,
-                  expires_in: parsed.expires_in,
-                  token_type: parsed.token_type,
-                  user: parsed.user,
-                } as Session);
-                setUser(parsed.user as User);
-                currentUserId = parsed.user.id;
-              }
-            }
-          }
-        }
-
-        if (currentUserId) {
-          const profileData = await fetchProfile(currentUserId);
-          setProfile(profileData);
-        }
-      } catch (err) {
-        console.error("Auth init error:", err);
-        setError("Error inicializando autenticación");
-      } finally {
-        setIsLoading(false);
+    // Handle OAuth callback manually since detectSessionInUrl is false.
+    // Google redirects back with tokens in the URL hash; we extract them
+    // and inject into the supabase client via setSession().
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      if (accessToken && refreshToken) {
+        // Clean the URL so tokens aren't visible in the address bar
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
       }
-    };
+    }
 
-    initAuth();
-
+    // onAuthStateChange is the SINGLE source of truth for auth state.
+    // - INITIAL_SESSION fires immediately on subscribe (with existing session or null)
+    // - SIGNED_IN fires after login or OAuth setSession
+    // - TOKEN_REFRESHED fires silently when tokens rotate
+    // - SIGNED_OUT fires on explicit sign-out
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        if (event === "SIGNED_OUT" || !newSession) {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          navigate("/login");
-        } else if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && newSession) {
+        if (event === "INITIAL_SESSION") {
+          if (newSession) {
+            setSession(newSession);
+            setUser(newSession.user);
+            const profileData = await fetchProfile(newSession.user.id);
+            setProfile(profileData);
+          }
+          setIsLoading(false);
+        } else if (event === "SIGNED_IN" && newSession) {
           setSession(newSession);
           setUser(newSession.user);
           const profileData = await fetchProfile(newSession.user.id);
           setProfile(profileData);
 
-          // Redirect based on role after fresh login or OAuth callback
+          // Redirect based on role after fresh login
           const isAuthPage = ["/login", "/register"].includes(window.location.pathname);
           if (isAuthPage && profileData) {
             navigate(profileData.role === "owner" ? "/owner" : "/app", { replace: true });
           }
+        } else if (event === "SIGNED_OUT" || !newSession) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          navigate("/login");
         } else if (event === "TOKEN_REFRESHED" && newSession) {
           setSession(newSession);
           setUser(newSession.user);

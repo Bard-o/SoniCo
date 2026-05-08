@@ -10,18 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// Clean stale OAuth hash BEFORE gotrue-js tries to parse it — prevents hang
-const hash = window.location.hash;
-if (hash && hash.includes("access_token")) {
-  const params = new URLSearchParams(hash.substring(1));
-  const accessToken = params.get("access_token");
-  const refreshToken = params.get("refresh_token");
-  if (accessToken && refreshToken) {
-    sessionStorage.setItem("supabase_oauth_recovery", JSON.stringify({ accessToken, refreshToken }));
-  }
-  window.history.replaceState(null, "", window.location.pathname + window.location.search);
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// detectSessionInUrl: false prevents gotrue-js _getSessionFromURL hang.
+// We handle OAuth callbacks manually in AuthContext.
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    detectSessionInUrl: false,
+  },
+});
 
 export const MEDIA_BUCKET = "media";
