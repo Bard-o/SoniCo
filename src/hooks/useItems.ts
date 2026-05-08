@@ -34,20 +34,42 @@ export function useItems(categoryFilter?: ItemCategory) {
   const create = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
     console.log("[useItems.create] called with:", JSON.stringify(item, null, 2));
     try {
-      const result = await supabase.from("items").insert(item).select();
-      console.log("[useItems.create] result:", result);
-      const { data, error } = result;
-      if (error) {
-        console.error("[useItems.create] error:", error);
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-        throw error;
-      }
-      const created = data?.[0];
-      if (!created) {
-        const msg = "No se recibió confirmación del servidor";
-        console.error("[useItems.create]", msg);
+      // Bypass supabase-js client, use direct fetch to isolate the hang
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      console.log("[useItems.create] token present:", !!token);
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      
+      const url = `${supabaseUrl}/rest/v1/items`;
+      console.log("[useItems.create] POST", url);
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey,
+          Authorization: `Bearer ${token}`,
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify(item),
+      });
+      
+      console.log("[useItems.create] response status:", response.status);
+      
+      if (!response.ok) {
+        const errBody = await response.text();
+        console.error("[useItems.create] HTTP error:", response.status, errBody);
+        const msg = `Error del servidor (${response.status})`;
+        toast({ title: "Error", description: msg, variant: "destructive" });
         throw new Error(msg);
       }
+      
+      const data = await response.json();
+      console.log("[useItems.create] data:", data);
+      const created = Array.isArray(data) ? data[0] : data;
+      
       toast({ title: "Ítem creado", description: `${created.name} creado con éxito.` });
       await fetchItems();
       return created;
