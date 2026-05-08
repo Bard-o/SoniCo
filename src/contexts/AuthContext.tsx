@@ -45,12 +45,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        // Race getSession against a 10s timeout — gotrue-js can hang on clock skew / URL parse
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
 
-        if (currentSession) {
+        const winner = await Promise.race([sessionPromise, timeoutPromise]);
+
+        let currentUserId: string | undefined;
+
+        if (winner && winner.data.session) {
+          // Normal path — getSession() resolved
+          const currentSession = winner.data.session;
           setSession(currentSession);
           setUser(currentSession.user);
-          const profileData = await fetchProfile(currentSession.user.id);
+          currentUserId = currentSession.user.id;
+        } else {
+          // Timeout or null — fall back to localStorage
+          console.warn("[AuthContext] getSession() hang or null, falling back to localStorage");
+          const raw = localStorage.getItem("sb-rxudtsesweqyywqomcmf-auth-token");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.access_token && parsed.user) {
+              setSession({
+                access_token: parsed.access_token,
+                refresh_token: parsed.refresh_token,
+                expires_at: parsed.expires_at,
+                expires_in: parsed.expires_in,
+                token_type: parsed.token_type,
+                user: parsed.user,
+              } as Session);
+              setUser(parsed.user as User);
+              currentUserId = parsed.user.id;
+            }
+          }
+        }
+
+        if (currentUserId) {
+          const profileData = await fetchProfile(currentUserId);
           setProfile(profileData);
         }
       } catch (err) {
