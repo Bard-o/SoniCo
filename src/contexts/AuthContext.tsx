@@ -60,22 +60,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(currentSession.user);
           currentUserId = currentSession.user.id;
         } else {
-          // Timeout or null — fall back to localStorage
+          // Timeout or null — fall back to localStorage, inject into supabase client
           console.warn("[AuthContext] getSession() hang or null, falling back to localStorage");
           const raw = localStorage.getItem("sb-rxudtsesweqyywqomcmf-auth-token");
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed.access_token && parsed.user) {
-              setSession({
-                access_token: parsed.access_token,
-                refresh_token: parsed.refresh_token,
-                expires_at: parsed.expires_at,
-                expires_in: parsed.expires_in,
-                token_type: parsed.token_type,
-                user: parsed.user,
-              } as Session);
-              setUser(parsed.user as User);
-              currentUserId = parsed.user.id;
+            if (parsed.access_token && parsed.refresh_token) {
+              try {
+                const { data: { session: restoredSession } } = await supabase.auth.setSession({
+                  access_token: parsed.access_token,
+                  refresh_token: parsed.refresh_token,
+                });
+                if (restoredSession) {
+                  setSession(restoredSession);
+                  setUser(restoredSession.user);
+                  currentUserId = restoredSession.user.id;
+                }
+              } catch (setSessionErr) {
+                console.error("[AuthContext] setSession failed:", setSessionErr);
+                // Last resort: use directly from localStorage
+                setSession({
+                  access_token: parsed.access_token,
+                  refresh_token: parsed.refresh_token,
+                  expires_at: parsed.expires_at,
+                  expires_in: parsed.expires_in,
+                  token_type: parsed.token_type,
+                  user: parsed.user,
+                } as Session);
+                setUser(parsed.user as User);
+                currentUserId = parsed.user.id;
+              }
             }
           }
         }
