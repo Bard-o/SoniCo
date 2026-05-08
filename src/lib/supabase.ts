@@ -11,7 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // detectSessionInUrl: false prevents gotrue-js _getSessionFromURL hang.
-// We handle OAuth callbacks manually in AuthContext.
+// OAuth callbacks are handled manually in AuthContext.
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     detectSessionInUrl: false,

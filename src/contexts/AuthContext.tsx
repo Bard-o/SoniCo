@@ -26,9 +26,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch profile from database — called from a SEPARATE useEffect
+  // to avoid async PostgREST calls inside onAuthStateChange callback.
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      console.log("[Auth] fetchProfile for:", userId);
       const { data, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -36,109 +37,118 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (profileError) {
-        console.error("[Auth] fetchProfile error:", profileError.message);
+        console.error("[Auth] Profile fetch error:", profileError.message);
         setError("Error cargando perfil");
         return null;
       }
 
-      console.log("[Auth] fetchProfile success:", data?.role, data?.full_name);
       return data;
     } catch (err) {
-      console.error("[Auth] fetchProfile exception:", err);
+      console.error("[Auth] Profile fetch exception:", err);
       setError("Error cargando perfil");
       return null;
     }
   };
 
   useEffect(() => {
-    // Subscribe to auth state changes FIRST, before any manual session setup.
-    // This ensures we don't miss any events.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        try {
-          console.log("[Auth] event:", event, "session:", !!newSession, "user:", newSession?.user?.id);
-
-          if (event === "INITIAL_SESSION") {
-            if (newSession) {
-              setSession(newSession);
-              setUser(newSession.user);
-              const profileData = await fetchProfile(newSession.user.id);
-              setProfile(profileData);
-            }
-            setIsLoading(false);
-          } else if (event === "SIGNED_IN" && newSession) {
-            setSession(newSession);
-            setUser(newSession.user);
-            setIsLoading(false);
-            const profileData = await fetchProfile(newSession.user.id);
-            setProfile(profileData);
-
-            // Redirect based on role after fresh login
-            const isAuthPage = ["/login", "/register"].includes(window.location.pathname);
-            if (isAuthPage && profileData) {
-              console.log("[Auth] redirecting to:", profileData.role === "owner" ? "/owner" : "/app");
-              navigate(profileData.role === "owner" ? "/owner" : "/app", { replace: true });
-            } else {
-              console.log("[Auth] SIGNED_IN done — isAuthPage:", isAuthPage, "profile:", !!profileData);
-            }
-          } else if (event === "SIGNED_OUT" || !newSession) {
-            console.log("[Auth] SIGNED_OUT");
-            setSession(null);
-            setUser(null);
-            setProfile(null);
-            setIsLoading(false);
-            navigate("/login");
-          } else if (event === "TOKEN_REFRESHED" && newSession) {
-            setSession(newSession);
-            setUser(newSession.user);
-          }
-        } catch (err) {
-          console.error("[Auth] onAuthStateChange error:", err);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    // Handle OAuth callback AFTER subscribing.
-    // With detectSessionInUrl:false, the hash won't be parsed automatically,
-    // so we extract tokens and call setSession manually.
-    const handleOAuthCallback = async () => {
-      const hash = window.location.hash;
-      if (hash && hash.includes("access_token")) {
-        const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        if (accessToken && refreshToken) {
-          console.log("[Auth] OAuth callback — calling setSession");
-          // Clean URL before setSession to avoid accidental re-processing
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-          try {
+    const initAuth = async () => {
+      try {
+        // Handle OAuth callback: extract tokens from URL hash manually
+        // because detectSessionInUrl is false.
+        const hash = window.location.hash;
+        if (hash && hash.includes("access_token")) {
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get("access_token");
+          const refreshToken = params.get("refresh_token");
+          if (accessToken && refreshToken) {
+            console.log("[Auth] OAuth callback detected, setting session");
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
             await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
-            console.log("[Auth] OAuth setSession done");
-          } catch (err) {
-            console.error("[Auth] OAuth setSession error:", err);
+            // setSession/onAuthStateChange will handle the rest
+            return; // Skip getSession — setSession triggers INITIAL_SESSION
           }
         }
+
+        // Normal page load (no OAuth hash): read session from localStorage
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+        if (currentSession) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          const profileData = await fetchProfile(currentSession.user.id);
+          setProfile(profileData);
+        }
+      } catch (err) {
+        console.error("[Auth] Init error:", err);
+        setError("Error inicializando autenticación");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    handleOAuthCallback();
+    initAuth();
+
+    // onAuthStateChange: ONLY update user/session state.
+    // Profile fetch is handled by the separate useEffect below.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        console.log("[Auth] onAuthStateChange:", event, !!newSession);
+
+        if (event === "SIGNED_OUT" || !newSession) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          navigate("/login");
+        } else if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && newSession) {
+          setSession(newSession);
+          setUser(newSession.user);
+          // Profile is fetched by the separate useEffect that watches `user`
+        } else if (event === "TOKEN_REFRESHED" && newSession) {
+          setSession(newSession);
+          setUser(newSession.user);
+        }
+      }
+    );
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
+  // Separate useEffect: fetch profile when user changes.
+  // This avoids making async PostgREST calls inside onAuthStateChange.
+  // Also handles redirect after fresh login.
+  useEffect(() => {
+    if (!user) return;
+
+    const loadProfile = async () => {
+      const profileData = await fetchProfile(user.id);
+      setProfile(profileData);
+
+      const isAuthPage = ["/login", "/register"].includes(window.location.pathname);
+      if (isAuthPage && profileData) {
+        console.log("[Auth] Redirecting to:", profileData.role === "owner" ? "/owner" : "/app");
+        navigate(profileData.role === "owner" ? "/owner" : "/app", { replace: true });
+      }
+    };
+
+    loadProfile();
+  }, [user?.id]);
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      navigate("/login");
     } catch (err) {
-      console.error("[Auth] signOut error:", err);
+      console.error("Sign out error:", err);
+      setError("Error cerrando sesión");
     }
-    // State cleanup happens in onAuthStateChange SIGNED_OUT handler
   };
 
   return (
