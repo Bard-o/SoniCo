@@ -81,7 +81,7 @@ export const CartSummary = ({ items, compact = false }: CartSummaryProps) => {
 
       <div className="border-t border-border bg-background px-5 py-4">
         <div className="mb-3 flex items-baseline justify-between">
-          <span className="text-[12px] uppercase tracking-wider text-foreground/60">Subtotal</span>
+          <span className="text-[12px] uppercase tracking-wider text-foreground/60">Subtotal/hora</span>
           <span className="text-[20px] font-medium tabular-nums">${subtotal.toLocaleString("es-AR")}</span>
         </div>
         <Button variant="cta" className="w-full" disabled>
