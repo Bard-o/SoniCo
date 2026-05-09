@@ -14,6 +14,7 @@ import Register from "./pages/Register.tsx";
 import UserDashboard from "./pages/UserDashboard.tsx";
 import MyReservations from "./pages/MyReservations.tsx";
 import ReservationDetail from "./pages/ReservationDetail.tsx";
+import RequestReservation from "./pages/RequestReservation.tsx";
 import OwnerDashboard from "./pages/OwnerDashboard.tsx";
 import OwnerRooms from "./pages/OwnerRooms.tsx";
 import OwnerRoomForm from "./pages/OwnerRoomForm.tsx";
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<UserDashboard />} />
+              <Route path="/rooms/:slug/reserve" element={<RequestReservation />} />
               <Route path="/app/reservations" element={<MyReservations />} />
               <Route path="/app/reservations/:id" element={<ReservationDetail />} />
               <Route path="/owner" element={<OwnerDashboard />} />

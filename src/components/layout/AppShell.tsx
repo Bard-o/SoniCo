@@ -31,10 +31,10 @@ const sampleNotifications: AppNotification[] = [
 type NavItem = { to: string; label: string; end?: boolean; badge?: number };
 
 const userLinks: NavItem[] = [
-  { to: "/app", label: "Salas", end: true },
+  { to: "/app", label: "Inicio", end: true },
+  { to: "/rooms", label: "Salas" },
   { to: "/equipment", label: "Alquiler de equipo" },
   { to: "/app/reservations", label: "Mis reservas" },
-  { to: "/app/rentals", label: "Mis alquileres" },
 ];
 
 const ownerLinks: NavItem[] = [
