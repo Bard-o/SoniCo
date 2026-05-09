@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Info, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -13,6 +13,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 const days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const slots = ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00"];
@@ -24,6 +25,7 @@ const RoomDetail = () => {
   const { slug } = useParams();
   const { room, linkedItems, isLoading, error } = useRoom(slug ?? "");
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [activePhoto, setActivePhoto] = useState(0);
 
@@ -240,7 +242,19 @@ const RoomDetail = () => {
                   <p className="mt-2 text-xs text-foreground/60">Mínimo de reserva: 1 hora</p>
                 </div>
                 <div className="border-t border-foreground/10 p-6">
-                  <Button size="lg" variant="cta" className="w-full" disabled={!room.is_active}>
+                  <Button
+                    size="lg"
+                    variant="cta"
+                    className="w-full"
+                    disabled={!room.is_active}
+                    onClick={() => {
+                      if (!user) {
+                        navigate("/login");
+                      } else if (room.is_active) {
+                        navigate(`/rooms/${room.slug}/reserve`);
+                      }
+                    }}
+                  >
                     {room.is_active ? (user ? "Reservar" : "Inicia sesión para reservar") : "No disponible"}
                   </Button>
                   <p className="mt-3 text-center text-xs text-foreground/60">

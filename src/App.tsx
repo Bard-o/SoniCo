@@ -12,10 +12,13 @@ import RoomDetail from "./pages/RoomDetail.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import UserDashboard from "./pages/UserDashboard.tsx";
+import MyReservations from "./pages/MyReservations.tsx";
+import ReservationDetail from "./pages/ReservationDetail.tsx";
 import OwnerDashboard from "./pages/OwnerDashboard.tsx";
 import OwnerRooms from "./pages/OwnerRooms.tsx";
 import OwnerRoomForm from "./pages/OwnerRoomForm.tsx";
 import OwnerItems from "./pages/OwnerItems.tsx";
+import OwnerPending from "./pages/OwnerPending.tsx";
 import OwnerItemForm from "./pages/OwnerItemForm.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Equipment from "./pages/Equipment.tsx";
@@ -41,8 +44,10 @@ const App = () => (
               <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<UserDashboard />} />
-              <Route path="/app/reservations" element={<UserDashboard />} />
+              <Route path="/app/reservations" element={<MyReservations />} />
+              <Route path="/app/reservations/:id" element={<ReservationDetail />} />
               <Route path="/owner" element={<OwnerDashboard />} />
+              <Route path="/owner/pending" element={<OwnerPending />} />
               <Route path="/owner/rooms" element={<OwnerRooms />} />
               <Route path="/owner/rooms/new" element={<OwnerRoomForm />} />
               <Route path="/owner/rooms/:slug/edit" element={<OwnerRoomForm />} />
