@@ -383,7 +383,7 @@ const RequestReservation = () => {
                       </Label>
                       <Select value={start} onValueChange={setStart} disabled={!date}>
                         <SelectTrigger className="mt-2">
-                          <SelectValue placeholder={date ? "Elegí horario" : "Elegí fecha primero"} />
+                          <SelectValue placeholder={date ? "Elige horario" : "Elige una fecha primero"} />
                         </SelectTrigger>
                         <SelectContent>
                           {timeSlots.length === 0 && (
@@ -429,7 +429,7 @@ const RequestReservation = () => {
                       </Label>
                       <div className="mt-2 flex h-10 items-center gap-2 rounded-md border border-input bg-cream/40 px-3 text-sm">
                         <Clock className="h-4 w-4 text-foreground/50" />
-                        <span className="tabular-nums">{end}</span>
+                        <span className="tabular-nums">{date && start ? end : "—"}</span>
                       </div>
                     </div>
                   </div>
@@ -475,58 +475,72 @@ const RequestReservation = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-6 space-y-8">
-                    {grouped.map(([cat, list]) => (
-                      <div key={cat}>
-                        <p className="chip-primary inline-block">{cat}</p>
-                        <ul className="mt-4 divide-y divide-border">
-                          {list.map((it) => {
-                            const qty = extras[it.id] ?? 0;
-                            return (
-                              <li key={it.id} className="flex items-center gap-4 py-4">
-                                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-sm bg-cream">
-                                  <span className="block h-6 w-6 gradient-block" aria-hidden />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium">{it.name}</p>
-                                  <p className="text-xs text-foreground/55">
-                                    ${it.price_addon} / hora · disponibles {it.quantity}
-                                  </p>
-                                </div>
-                                {qty === 0 ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={it.quantity === 0}
-                                    onClick={() => setQty(it.id, 1)}
-                                  >
-                                    Añadir
-                                  </Button>
-                                ) : (
-                                  <div className="inline-flex items-center gap-1 rounded-sm border border-foreground/15">
-                                    <button
-                                      onClick={() => setQty(it.id, qty - 1)}
-                                      className="grid h-8 w-8 place-items-center hover:bg-foreground/5"
-                                    >
-                                      <Minus className="h-3.5 w-3.5" />
-                                    </button>
-                                    <span className="min-w-[1.5rem] text-center text-sm tabular-nums">
-                                      {qty}
-                                    </span>
-                                    <button
-                                      onClick={() => setQty(it.id, qty + 1)}
-                                      className="grid h-8 w-8 place-items-center hover:bg-foreground/5"
-                                    >
-                                      <Plus className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    ))}
+                  <div className="mt-6">
+                    <Accordion type="multiple" defaultValue={[grouped[0]?.[0]]}>
+                      {grouped.map(([cat, list]) => (
+                        <AccordionItem key={cat} value={cat} className="border-foreground/10">
+                          <AccordionTrigger className="hover:no-underline">
+                            <span className="flex items-center gap-3">
+                              <span className="chip-primary">{cat}</span>
+                              <span className="text-sm text-foreground/60">{list.length} items</span>
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <ul className="divide-y divide-border">
+                              {list.map((it) => {
+                                const qty = extras[it.id] ?? 0;
+                                const itemPhoto = it.photos?.[0] ?? "";
+                                return (
+                                  <li key={it.id} className="flex items-center gap-4 py-4">
+                                    <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-sm bg-cream">
+                                      {itemPhoto ? (
+                                        <img src={itemPhoto} alt={it.name} className="h-full w-full object-cover" />
+                                      ) : (
+                                        <span className="block h-6 w-6 gradient-block" aria-hidden />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-medium">{it.name}</p>
+                                      <p className="text-xs text-foreground/55">
+                                        ${it.price_addon} / hora · disponibles {it.quantity}
+                                      </p>
+                                    </div>
+                                    {qty === 0 ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={it.quantity === 0}
+                                        onClick={() => setQty(it.id, 1)}
+                                      >
+                                        Añadir
+                                      </Button>
+                                    ) : (
+                                      <div className="inline-flex items-center gap-1 rounded-sm border border-foreground/15">
+                                        <button
+                                          onClick={() => setQty(it.id, qty - 1)}
+                                          className="grid h-8 w-8 place-items-center hover:bg-foreground/5"
+                                        >
+                                          <Minus className="h-3.5 w-3.5" />
+                                        </button>
+                                        <span className="min-w-[1.5rem] text-center text-sm tabular-nums">
+                                          {qty}
+                                        </span>
+                                        <button
+                                          onClick={() => setQty(it.id, qty + 1)}
+                                          className="grid h-8 w-8 place-items-center hover:bg-foreground/5"
+                                        >
+                                          <Plus className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
                   </div>
                 )}
               </section>
