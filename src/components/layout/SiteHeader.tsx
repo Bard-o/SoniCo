@@ -42,9 +42,27 @@ export const SiteHeader = () => {
         </Link>
 
         <nav className="hidden items-center gap-9 md:flex">
-          <NavLink to="/rooms" className={navItem}>Salas</NavLink>
-          <NavLink to="/equipment" className={navItem}>Alquiler de equipo</NavLink>
-          <NavLink to="/about" className={navItem}>Nosotros</NavLink>
+          {user && profile ? (
+            profile.role === "owner" ? (
+              <>
+                <NavLink to="/owner" end className={navItem}>Dashboard</NavLink>
+                <NavLink to="/owner/pending" className={navItem}>Pendientes</NavLink>
+                <NavLink to="/rooms" className={navItem}>Salas</NavLink>
+                <NavLink to="/owner/items" className={navItem}>Inventario</NavLink>
+              </>
+            ) : (
+              <>
+                <NavLink to="/app/reservations" className={navItem}>Mis reservas</NavLink>
+                <NavLink to="/rooms" className={navItem}>Salas</NavLink>
+                <NavLink to="/equipment" className={navItem}>Alquiler de equipo</NavLink>
+              </>
+            )
+          ) : (
+            <>
+              <NavLink to="/rooms" className={navItem}>Salas</NavLink>
+              <NavLink to="/equipment" className={navItem}>Alquiler de equipo</NavLink>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -69,7 +87,7 @@ export const SiteHeader = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to={profile?.role === "owner" ? "/owner" : "/app"}>Dashboard</Link>
+                  <Link to={profile?.role === "owner" ? "/owner" : "/app/reservations"}>Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>

@@ -31,10 +31,9 @@ const sampleNotifications: AppNotification[] = [
 type NavItem = { to: string; label: string; end?: boolean; badge?: number };
 
 const userLinks: NavItem[] = [
-  { to: "/app", label: "Inicio", end: true },
+  { to: "/app/reservations", label: "Mis reservas", end: true },
   { to: "/rooms", label: "Salas" },
   { to: "/equipment", label: "Alquiler de equipo" },
-  { to: "/app/reservations", label: "Mis reservas" },
 ];
 
 const ownerLinks: NavItem[] = [
@@ -114,7 +113,7 @@ export const AppShell = ({
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur-md">
         <div className="container-app flex h-16 items-center gap-8">
-          <Link to={currentRole === "owner" ? "/owner" : "/app"} className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5">
             <span className="block h-7 w-7 gradient-block" aria-hidden />
             <span className="text-[18px] tracking-tight">SoniCo</span>
             {currentRole === "owner" && (
