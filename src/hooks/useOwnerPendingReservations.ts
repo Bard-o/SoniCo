@@ -56,5 +56,7 @@ export function useOwnerPendingReservations() {
     fetch();
   }, []);
 
-  return { pendingReservations, isLoading, error, refetch: fetch };
+  const count = pendingReservations?.length ?? 0;
+
+  return { pendingReservations, count, isLoading, error, refetch: fetch };
 }

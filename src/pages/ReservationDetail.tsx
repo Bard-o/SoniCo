@@ -15,7 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useReservationDetail, useWithdrawReservation } from "@/hooks/useReservations";
+import { useReservation } from "@/hooks/useReservation";
+import { useWithdrawReservation } from "@/hooks/useWithdrawReservation";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -38,7 +39,7 @@ function formatDateTime(start: string, end: string) {
 function PriceBreakdownCard({
   reservation,
 }: {
-  reservation: NonNullable<ReturnType<typeof useReservationDetail>["reservation"]>;
+  reservation: NonNullable<ReturnType<typeof useReservation>["reservation"]>;
 }) {
   const { dateStr, timeStr, durationStr } = formatDateTime(
     reservation.start_time,
@@ -116,7 +117,7 @@ function PriceBreakdownCard({
 
 const ReservationDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { reservation, isLoading, error, refetch } = useReservationDetail(id ?? "");
+  const { reservation, isLoading, error, refetch } = useReservation(id ?? "");
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
 
   const { withdraw, isLoading: isWithdrawing } = useWithdrawReservation(() => {

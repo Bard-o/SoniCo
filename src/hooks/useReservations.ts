@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { ReservationStatus } from "@/types/database";
 
-interface ReservationWithRoom {
+export interface ReservationWithRoom {
   id: string;
   user_id: string;
   room_id: string;
@@ -16,7 +16,8 @@ interface ReservationWithRoom {
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
-  rooms: { name: string; slug: string; photos: string[] } | null;
+  room: { name: string; slug: string; photos: string[] } | null;
+  items?: { id: string; item_id: string; quantity: number; unit_price: number; item?: { name: string } }[];
 }
 
 interface UseReservationsFilters {
@@ -39,7 +40,7 @@ export function useReservations(filters?: UseReservationsFilters) {
     try {
       let query = supabase
         .from("reservations")
-        .select("*, rooms(name, slug, photos)")
+        .select("*, room:rooms(name, slug, photos)")
         .eq("user_id", user.id)
         .order("start_time", { ascending: false });
 

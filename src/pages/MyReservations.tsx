@@ -15,9 +15,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useReservations, useWithdrawReservation } from "@/hooks/useReservations";
+import { useReservations } from "@/hooks/useReservations";
+import { useWithdrawReservation } from "@/hooks/useWithdrawReservation";
 import { cn } from "@/lib/utils";
-import type { Reservation, ReservationStatus } from "@/hooks/useReservations";
+import type { ReservationWithRoom } from "@/hooks/useReservations";
+import type { ReservationStatus } from "@/types/database";
 
 const filters: { key: ReservationStatus | "all"; label: string }[] = [
   { key: "all", label: "Todas" },
@@ -43,7 +45,7 @@ function ReservationCard({
   onWithdraw,
   isWithdrawing,
 }: {
-  reservation: Reservation;
+  reservation: ReservationWithRoom;
   onWithdraw: (id: string) => void;
   isWithdrawing: boolean;
 }) {

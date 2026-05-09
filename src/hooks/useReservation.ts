@@ -1,52 +1,55 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Reservation, ReservationItem } from "@/types/database";
+import type { Reservation, ReservationStatus } from "@/types/database";
 
-interface ReservationWithRoom extends Reservation {
-  rooms: { name: string; slug: string; photos: string[] } | null;
+interface ReservationDetailRoom {
+  id: string;
+  name: string;
+  slug: string;
+  photos: string[];
+  price_per_half_hour: number;
 }
 
-interface ReservationItemWithItem extends ReservationItem {
-  items: { name: string; category: string } | null;
+interface ReservationDetailItem {
+  id: string;
+  item_id: string;
+  quantity: number;
+  unit_price: number;
+  item: { name: string } | null;
+}
+
+interface ReservationDetail extends Reservation {
+  room: ReservationDetailRoom | null;
+  items: ReservationDetailItem[];
 }
 
 export function useReservation(id: string | null) {
-  const [reservation, setReservation] = useState<ReservationWithRoom | null>(null);
-  const [reservationItems, setReservationItems] = useState<ReservationItemWithItem[] | null>(null);
+  const [reservation, setReservation] = useState<ReservationDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetch = async () => {
     if (!id) {
       setReservation(null);
-      setReservationItems(null);
       setIsLoading(false);
       return;
     }
 
     try {
-      const { data: resData, error: resErr } = await supabase
+      const { data, error: err } = await supabase
         .from("reservations")
-        .select("*, rooms(name, slug, photos)")
+        .select(`
+          *,
+          room:rooms(id, name, slug, photos, price_per_half_hour),
+          items:reservation_items(id, item_id, quantity, unit_price, item:items(name))
+        `)
         .eq("id", id)
         .single();
 
-      if (resErr) {
-        setError(resErr.message);
-        setIsLoading(false);
-        return;
-      }
-
-      const { data: itemsData, error: itemsErr } = await supabase
-        .from("reservation_items")
-        .select("*, items(name, category)")
-        .eq("reservation_id", id);
-
-      if (itemsErr) {
-        setError(itemsErr.message);
+      if (err) {
+        setError(err.message);
       } else {
-        setReservation(resData as ReservationWithRoom);
-        setReservationItems(itemsData as ReservationItemWithItem[]);
+        setReservation(data as unknown as ReservationDetail);
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Unknown error");
@@ -59,5 +62,5 @@ export function useReservation(id: string | null) {
     fetch();
   }, [id]);
 
-  return { reservation, reservationItems, isLoading, error, refetch: fetch };
+  return { reservation, isLoading, error, refetch: fetch };
 }
