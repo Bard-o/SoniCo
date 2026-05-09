@@ -32,7 +32,7 @@ type NavItem = { to: string; label: string; end?: boolean; badge?: number };
 
 const userLinks: NavItem[] = [
   { to: "/app", label: "Salas", end: true },
-  { to: "/app/equipment", label: "Alquiler de equipo" },
+  { to: "/equipment", label: "Alquiler de equipo" },
   { to: "/app/reservations", label: "Mis reservas" },
   { to: "/app/rentals", label: "Mis alquileres" },
 ];
