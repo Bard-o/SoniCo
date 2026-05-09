@@ -11,7 +11,6 @@ import Rooms from "./pages/Rooms.tsx";
 import RoomDetail from "./pages/RoomDetail.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
-import UserDashboard from "./pages/UserDashboard.tsx";
 import MyReservations from "./pages/MyReservations.tsx";
 import ReservationDetail from "./pages/ReservationDetail.tsx";
 import RequestReservation from "./pages/RequestReservation.tsx";
@@ -44,7 +43,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
-              <Route path="/app" element={<UserDashboard />} />
+              <Route path="/app" element={<Navigate to="/app/reservations" replace />} />
               <Route path="/rooms/:slug/reserve" element={<RequestReservation />} />
               <Route path="/app/reservations" element={<MyReservations />} />
               <Route path="/app/reservations/:id" element={<ReservationDetail />} />
