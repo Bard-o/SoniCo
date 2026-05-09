@@ -107,8 +107,8 @@ const Equipment = () => {
 
       {/* Sticky filter bar */}
       <div className="sticky top-16 z-30 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="container-app flex items-center gap-3 overflow-x-auto py-4">
-          <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+        <div className="container-app flex items-center gap-3 py-4">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
             {["Todo", ...CATEGORIES].map((c) => (
               <button
                 key={c}
