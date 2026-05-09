@@ -59,6 +59,10 @@ export interface Item {
   updated_at: string;
 }
 
+export interface RentalItem extends Item {
+  available_units: number;
+}
+
 export interface RoomItem {
   id: string;
   room_id: string;
@@ -96,6 +100,13 @@ export interface Database {
         Row: RoomItem;
         Insert: Omit<RoomItem, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<RoomItem, "id" | "created_at">>;
+      };
+    };
+    Views: {
+      rental_items: {
+        Row: RentalItem;
+        Insert: never;
+        Update: never;
       };
     };
   };
