@@ -1,6 +1,6 @@
 export const STUDIO_TIMEZONE = "America/Bogota";
 
-export const MIN_RESERVATION_HALF_HOURS = 4;
+export const MIN_RESERVATION_HALF_HOURS = 2;
 
 export const MIN_RENTAL_HOURS = 1;
 
