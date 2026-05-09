@@ -130,7 +130,7 @@ const EquipmentDetail = () => {
               {/* Price cards */}
               <div className="mt-8 grid grid-cols-2 gap-3">
                 <div className="rounded-sm border border-border bg-card p-4">
-                  <p className="text-[11px] uppercase tracking-wider text-foreground/55">Alquiler</p>
+                  <p className="text-[11px] uppercase tracking-wider text-foreground/55">Por hora</p>
                   <p className="mt-1 text-2xl font-medium tracking-tight">
                     ${item.price_rental.toLocaleString("es-AR")}
                   </p>

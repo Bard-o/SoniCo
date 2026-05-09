@@ -50,7 +50,7 @@ export const CartSummary = ({ items, compact = false }: CartSummaryProps) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="truncate text-[14px] font-medium leading-tight">{item.name}</p>
-              <p className="mt-0.5 text-[12px] text-foreground/55">${item.price_rental.toLocaleString("es-AR")} / alquiler</p>
+              <p className="mt-0.5 text-[12px] text-foreground/55">${item.price_rental.toLocaleString("es-AR")} / hora</p>
               {!compact && (
                 <div className="mt-2 inline-flex items-center gap-1 rounded-sm border border-foreground/15">
                   <button

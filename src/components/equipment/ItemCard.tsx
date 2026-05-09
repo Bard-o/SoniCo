@@ -46,7 +46,7 @@ export const ItemCard = ({ item }: ItemCardProps) => {
 
         <div className="mt-auto flex items-end justify-between gap-3 pt-2">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-foreground/50">Por alquiler</p>
+            <p className="text-[11px] uppercase tracking-wider text-foreground/50">Por hora</p>
             <p className="text-[20px] font-medium leading-none tracking-tight">${item.price_rental.toLocaleString("es-AR")}</p>
           </div>
 
