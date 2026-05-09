@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, Menu, User, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ const userLinks: NavItem[] = [
 const ownerLinks: NavItem[] = [
   { to: "/owner", label: "Dashboard", end: true },
   { to: "/owner/pending", label: "Pendientes" },
-  { to: "/rooms", label: "Salas" },
+  { to: "/owner/rooms", label: "Salas" },
   { to: "/owner/items", label: "Inventario" },
 ];
 
@@ -71,6 +72,8 @@ export const Navbar = () => {
       </NavLink>
     ));
 
+  const dashboardPath = isOwner ? "/owner" : "/app/reservations";
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur-md">
       <div className="container-app flex h-16 items-center">
@@ -83,15 +86,12 @@ export const Navbar = () => {
         {/* Nav links — centered on desktop */}
         <nav className="mx-auto hidden items-center gap-9 md:flex">{renderNavLinks()}</nav>
 
-        {/* Spacer to balance logo on mobile */}
-        <div className="md:hidden" />
-
-        {/* Right side */}
-        <div className="flex items-center gap-2">
+        {/* Right side — pushed to far right */}
+        <div className="ml-auto flex items-center gap-2">
           {isLoading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : user && profile ? (
-            /* Authenticated: profile dropdown (desktop nav inside on mobile) */
+            /* Authenticated: profile dropdown */
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-foreground/5">
@@ -109,9 +109,9 @@ export const Navbar = () => {
                   </p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {/* Mobile: nav items inside profile dropdown */}
+                {/* Mobile: nav items (skip first = dashboard, already below) */}
                 <div className="md:hidden">
-                  {links.map((l) => (
+                  {links.slice(1).map((l) => (
                     <DropdownMenuItem key={l.to} asChild>
                       <NavLink to={l.to} end={l.end}>{l.label}</NavLink>
                     </DropdownMenuItem>
@@ -119,7 +119,7 @@ export const Navbar = () => {
                   <DropdownMenuSeparator />
                 </div>
                 <DropdownMenuItem asChild>
-                  <Link to={isOwner ? "/owner" : "/app/reservations"}>Dashboard</Link>
+                  <Link to={dashboardPath}>Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
@@ -146,15 +146,15 @@ export const Navbar = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-64 p-6">
+                  <VisuallyHidden>
+                    <SheetTitle>Menú de navegación</SheetTitle>
+                  </VisuallyHidden>
                   <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2.5">
                         <span className="block h-6 w-6 gradient-block" aria-hidden />
                         <span className="text-base tracking-tight">SoniCo</span>
                       </span>
-                      <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
-                        <X className="h-4 w-4" />
-                      </Button>
                     </div>
                     <nav className="flex flex-col gap-4">{renderNavLinks(true)}</nav>
                     <div className="flex flex-col gap-2">
