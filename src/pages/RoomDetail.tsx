@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRoom } from "@/hooks/useRoom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Accordion,
   AccordionContent,
@@ -22,6 +23,7 @@ const bookedKey = new Set([
 const RoomDetail = () => {
   const { slug } = useParams();
   const { room, linkedItems, isLoading, error } = useRoom(slug ?? "");
+  const { user } = useAuth();
 
   const [activePhoto, setActivePhoto] = useState(0);
 
@@ -239,7 +241,7 @@ const RoomDetail = () => {
                 </div>
                 <div className="border-t border-foreground/10 p-6">
                   <Button size="lg" variant="cta" className="w-full" disabled={!room.is_active}>
-                    {room.is_active ? "Inicia sesión para reservar" : "No disponible"}
+                    {room.is_active ? (user ? "Reservar" : "Inicia sesión para reservar") : "No disponible"}
                   </Button>
                   <p className="mt-3 text-center text-xs text-foreground/60">
                     Pago en estudio · Cancelación gratuita 24h antes

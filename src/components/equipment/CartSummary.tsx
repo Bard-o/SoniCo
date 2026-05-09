@@ -1,6 +1,7 @@
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart, useCartDetailed } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import type { RentalItem } from "@/types/database";
 
 interface CartSummaryProps {
@@ -9,6 +10,7 @@ interface CartSummaryProps {
 }
 
 export const CartSummary = ({ items, compact = false }: CartSummaryProps) => {
+  const { user } = useAuth();
   const { count, clear, setQty } = useCart();
   const detailed = useCartDetailed(items);
 
@@ -87,7 +89,9 @@ export const CartSummary = ({ items, compact = false }: CartSummaryProps) => {
         <Button variant="cta" className="w-full" disabled>
           Solicitar alquiler
         </Button>
-        <p className="mt-2 text-center text-[11px] text-foreground/50">Inicia sesión para confirmar</p>
+        <p className="mt-2 text-center text-[11px] text-foreground/50">
+          {user ? "Función próximamente" : "Inicia sesión para solicitar alquiler"}
+        </p>
       </div>
     </aside>
   );
