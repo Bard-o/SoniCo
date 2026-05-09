@@ -1,6 +1,7 @@
 import { ArrowUpRight, CalendarCheck, Clock, DoorOpen, Inbox } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Minimal stub — rooms wiring deferred to Iteración 3
 const rooms = [
@@ -29,13 +30,16 @@ const today = [
 ];
 
 const OwnerDashboard = () => {
+  const { profile } = useAuth();
+  const firstName = profile?.full_name?.split(" ")[0] ?? "admin";
+
   return (
     <AppShell role="owner">
       <section className="border-b border-border gradient-warm">
         <div className="container-app py-14">
           <p className="eyebrow">— Panel del estudio</p>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-            <h1 className="display-hero">Hola, María.</h1>
+            <h1 className="display-hero">Hola, {firstName}.</h1>
             <p className="text-[15px] text-foreground/70">Martes, 5 de mayo de 2026</p>
           </div>
         </div>

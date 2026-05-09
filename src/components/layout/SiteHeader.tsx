@@ -68,14 +68,10 @@ export const SiteHeader = () => {
                   </p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {profile?.role === "owner" && (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link to="/owner">Dashboard</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
+                <DropdownMenuItem asChild>
+                  <Link to={profile?.role === "owner" ? "/owner" : "/app"}>Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" /> Mi perfil
                 </DropdownMenuItem>
