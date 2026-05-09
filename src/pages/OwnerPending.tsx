@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useOwnerPendingReservations } from "@/hooks/useReservations";
+import { useOwnerPendingReservations } from "@/hooks/useOwnerPendingReservations";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 

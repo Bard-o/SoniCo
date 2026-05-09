@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOwnerPendingReservations } from "@/hooks/useReservations";
+import { useOwnerPendingReservations } from "@/hooks/useOwnerPendingReservations";
 
 // Stub data for sections not yet wired
 const rooms = [
