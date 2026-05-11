@@ -88,23 +88,17 @@ const RentalDetail = () => {
     0,
   );
   const total = itemsTotal * hours;
-  const firstPhoto = rental.items?.[0]?.item?.photos?.[0];
 
   return (
     <AppShell role="user">
-      <div
-        className="border-b border-border bg-cover bg-center"
-        style={firstPhoto ? { backgroundImage: `url(${firstPhoto})` } : undefined}
-      >
-        <div className="bg-background/70 backdrop-blur-sm">
-          <div className="container-app py-8">
-            <Link
-              to="/app"
-              className="inline-flex items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" /> Volver a Mis solicitudes
-            </Link>
-          </div>
+      <div className="border-b border-border gradient-warm">
+        <div className="container-app py-8">
+          <Link
+            to="/app"
+            className="inline-flex items-center gap-1.5 text-sm text-foreground/60 hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Volver a Mis solicitudes
+          </Link>
         </div>
       </div>
 
