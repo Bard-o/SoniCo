@@ -7,7 +7,6 @@ import {
   CalendarIcon,
   Check,
   ChevronRight,
-  CircleCheck,
   Clock,
   Minus,
   Plus,
@@ -114,7 +113,6 @@ const RequestRental = () => {
   const [endTime, setEndTime] = useState("");
   const [bandName, setBandName] = useState("");
   const [details, setDetails] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Compute studio hours for selected day
   const daySlots = useMemo(() => {
@@ -164,31 +162,6 @@ const RequestRental = () => {
     );
   }
 
-  // Submitted success state
-  if (isSubmitted) {
-    return (
-      <AppShell role="user">
-        <div className="container-app flex min-h-[60vh] items-center justify-center py-16">
-          <div className="card-surface max-w-lg p-10 text-center">
-            <CircleCheck className="mx-auto h-12 w-12 text-foreground" />
-            <h1 className="section-heading mt-6">Solicitud enviada</h1>
-            <p className="mt-4 text-foreground/70">
-              Recibimos tu solicitud de alquiler. Te avisaremos en cuanto el estudio la confirme.
-            </p>
-            <div className="mt-8 flex justify-center gap-3">
-              <Button asChild variant="outline">
-                <Link to="/equipment">Seguir explorando</Link>
-              </Button>
-              <Button asChild variant="cta">
-                <Link to="/app">Ver mis solicitudes</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </AppShell>
-    );
-  }
-
   const loading = catalogLoading || settingsLoading;
 
   if (loading) {
@@ -226,7 +199,7 @@ const RequestRental = () => {
 
     if (result) {
       clear();
-      setIsSubmitted(true);
+      navigate("/app");
     }
   };
 

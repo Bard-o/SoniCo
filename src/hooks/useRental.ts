@@ -7,7 +7,7 @@ interface RentalDetailItem {
   item_id: string;
   quantity: number;
   unit_price: number;
-  item: { name: string } | null;
+  item: { name: string; photos: string[] } | null;
 }
 
 interface RentalDetail extends Rental {
@@ -31,7 +31,7 @@ export function useRental(id: string | null) {
         .from("rentals")
         .select(`
           *,
-          items:rental_request_items(id, item_id, quantity, unit_price, item:items(name))
+          items:rental_request_items(id, item_id, quantity, unit_price, item:items(name, photos))
         `)
         .eq("id", id)
         .single();
