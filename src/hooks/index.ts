@@ -9,3 +9,7 @@ export { useRentals } from "./useRentals";
 export { useRental } from "./useRental";
 export { useWithdrawRental } from "./useWithdrawRental";
 export { useOwnerPendingRentals } from "./useOwnerPendingRentals";
+export { useApproveReservation } from "./useApproveReservation";
+export { useDenyReservation } from "./useDenyReservation";
+export { useApproveRental } from "./useApproveRental";
+export { useDenyRental } from "./useDenyRental";
