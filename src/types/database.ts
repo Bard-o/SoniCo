@@ -72,6 +72,22 @@ export interface RoomItem {
   updated_at: string;
 }
 
+export type NotificationType =
+  | "reservation_confirmed"
+  | "reservation_denied"
+  | "rental_confirmed"
+  | "rental_denied";
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  message: string;
+  owner_message: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
 export type ReservationStatus = "pending" | "confirmed" | "denied" | "cancelled";
 
 export interface Reservation {
@@ -85,6 +101,7 @@ export interface Reservation {
   total_price: number;
   cancellation_reason: string | null;
   cancelled_at: string | null;
+  owner_message: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -169,10 +186,15 @@ export interface Database {
         Insert: Omit<Rental, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<Rental, "id" | "created_at">>;
       };
-      rental_request_items: {
+rental_request_items: {
         Row: RentalItemRecord;
         Insert: Omit<RentalItemRecord, "id" | "created_at">;
         Update: Partial<Omit<RentalItemRecord, "id" | "created_at">>;
+      };
+      notifications: {
+        Row: Notification;
+        Insert: Omit<Notification, "id" | "created_at">;
+        Update: Partial<Omit<Notification, "id" | "created_at">>;
       };
     };
     Views: {
