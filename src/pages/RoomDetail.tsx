@@ -91,8 +91,8 @@ const RoomDetail = () => {
         </div>
       </div>
 
-      <div className="container-app py-12 lg:py-16">
-        <div className="grid gap-12 lg:grid-cols-12">
+      <div className="container-app py-8 lg:py-16">
+        <div className="grid gap-8 lg:gap-12 lg:grid-cols-12">
           {/* LEFT */}
           <div className="lg:col-span-8">
             {/* Gallery */}
@@ -102,9 +102,7 @@ const RoomDetail = () => {
                   <img
                     src={currentPhoto}
                     alt={room.name}
-                    width={1280}
-                    height={896}
-                    className="aspect-[16/10] w-full object-cover"
+                    className="aspect-[4/3] w-full object-cover md:aspect-[16/10]"
                   />
                 </div>
                 <div className="mt-3 flex gap-2 overflow-x-auto md:gap-3">
@@ -112,7 +110,7 @@ const RoomDetail = () => {
                     <button
                       key={i}
                       onClick={() => setActivePhoto(i)}
-                      className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-sm transition-all md:h-20 md:w-28 ${
+                      className={`relative shrink-0 overflow-hidden rounded-sm transition-all h-14 w-20 md:h-20 md:w-28 ${
                         i === activePhoto ? "ring-2 ring-primary" : "opacity-60 hover:opacity-100"
                       }`}
                     >
@@ -128,7 +126,7 @@ const RoomDetail = () => {
             )}
 
             {/* Heading */}
-            <div className="mt-12">
+            <div className="mt-8 lg:mt-12">
               <div className="flex flex-wrap items-center gap-2">
                 {room.is_active ? (
                   <span className="inline-flex items-center gap-1.5 rounded-sm bg-foreground px-2.5 py-1 text-[11px] uppercase tracking-wider text-background">
@@ -144,7 +142,7 @@ const RoomDetail = () => {
 
             {/* Included items */}
             {linkedItems.length > 0 ? (
-              <div className="mt-12 card-surface p-6 sm:p-8">
+              <div className="mt-8 card-surface p-6 sm:p-8 lg:mt-12">
                 <div className="flex items-center gap-2">
                   <h2 className="sub-heading">Incluido en esta sala</h2>
                   <Info className="h-4 w-4 text-foreground/50" />
@@ -177,7 +175,7 @@ const RoomDetail = () => {
             ) : null}
 
             {/* Calendar */}
-            <div className="mt-10 card-surface p-6 sm:p-8">
+            <div className="mt-8 card-surface p-6 sm:p-8 lg:mt-10">
               <div className="flex items-center justify-between">
                 <h2 className="sub-heading">Disponibilidad esta semana</h2>
                 <div className="flex items-center gap-1">
