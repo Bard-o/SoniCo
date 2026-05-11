@@ -2,9 +2,9 @@ export const STUDIO_TIMEZONE = "America/Bogota";
 
 export const MIN_RESERVATION_HALF_HOURS = 2;
 
-export const MIN_RENTAL_HOURS = 1;
+export const MIN_RENTAL_HOURS = 3;
 
-export const MAX_RENTAL_HOURS = 720;
+export const MAX_RENTAL_HOURS = 48;
 
 export const MAX_PHOTOS_PER_ITEM = 4;
 

@@ -1,4 +1,5 @@
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart, useCartDetailed } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ interface CartSummaryProps {
 }
 
 export const CartSummary = ({ items, compact = false }: CartSummaryProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { count, clear, setQty } = useCart();
   const detailed = useCartDetailed(items);
@@ -86,11 +88,15 @@ export const CartSummary = ({ items, compact = false }: CartSummaryProps) => {
           <span className="text-[12px] uppercase tracking-wider text-foreground/60">Subtotal/hora</span>
           <span className="text-[20px] font-medium tabular-nums">${subtotal.toLocaleString("es-AR")}</span>
         </div>
-        <Button variant="cta" className="w-full" disabled>
+        <Button
+          variant="cta"
+          className="w-full"
+          onClick={() => user ? navigate("/equipment/request") : navigate("/login?return=/equipment/request")}
+        >
           Solicitar alquiler
         </Button>
         <p className="mt-2 text-center text-[11px] text-foreground/50">
-          {user ? "Función próximamente" : "Inicia sesión para solicitar alquiler"}
+          {user ? "Revisá tu solicitud antes de confirmar" : "Iniciá sesión para solicitar alquiler"}
         </p>
       </div>
     </aside>

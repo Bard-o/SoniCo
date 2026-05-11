@@ -11,7 +11,8 @@ import Rooms from "./pages/Rooms.tsx";
 import RoomDetail from "./pages/RoomDetail.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
-import MyReservations from "./pages/MyReservations.tsx";
+import UserDashboard from "./pages/UserDashboard.tsx";
+import RentalDetail from "./pages/RentalDetail.tsx";
 import ReservationDetail from "./pages/ReservationDetail.tsx";
 import RequestReservation from "./pages/RequestReservation.tsx";
 import OwnerDashboard from "./pages/OwnerDashboard.tsx";
@@ -23,6 +24,7 @@ import OwnerItemForm from "./pages/OwnerItemForm.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Equipment from "./pages/Equipment.tsx";
 import EquipmentDetail from "./pages/EquipmentDetail.tsx";
+import RequestRental from "./pages/RequestRental.tsx";
 
 const queryClient = new QueryClient();
 
@@ -43,10 +45,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
-              <Route path="/app" element={<Navigate to="/app/reservations" replace />} />
+              <Route path="/app" element={<UserDashboard />} />
+              <Route path="/equipment/request" element={<RequestRental />} />
               <Route path="/rooms/:slug/reserve" element={<RequestReservation />} />
-              <Route path="/app/reservations" element={<MyReservations />} />
               <Route path="/app/reservations/:id" element={<ReservationDetail />} />
+              <Route path="/app/rentals/:id" element={<RentalDetail />} />
               <Route path="/owner" element={<OwnerDashboard />} />
               <Route path="/owner/pending" element={<OwnerPending />} />
               <Route path="/owner/rooms" element={<OwnerRooms />} />

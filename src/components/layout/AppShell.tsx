@@ -55,17 +55,20 @@ export const AppShell = ({
   );
 };
 
-export const StatusBadge = ({ status }: { status: "pending" | "confirmed" | "denied" | "cancelled" }) => {
-  const map = {
+export const StatusBadge = ({ status, type = "reservation" }: { status: "pending" | "confirmed" | "denied" | "cancelled"; type?: "reservation" | "rental" }) => {
+  const labels = type === "rental"
+    ? { pending: "Pendiente", confirmed: "Confirmado", denied: "Denegado", cancelled: "Cancelado" }
+    : { pending: "Pendiente", confirmed: "Confirmada", denied: "Denegada", cancelled: "Cancelada" };
+  const classes = {
     pending: { label: "Pendiente", cls: "bg-warning-soft text-foreground" },
     confirmed: { label: "Confirmada", cls: "bg-success-soft text-foreground" },
     denied: { label: "Denegada", cls: "bg-destructive/10 text-destructive" },
     cancelled: { label: "Cancelada", cls: "bg-muted text-foreground/60" },
   } as const;
-  const s = map[status];
+  const s = classes[status];
   return (
     <span className={cn("inline-flex items-center rounded-sm px-2 py-1 text-[11px] font-medium uppercase tracking-wider", s.cls)}>
-      {s.label}
+      {labels[status]}
     </span>
   );
 };

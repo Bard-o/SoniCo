@@ -89,6 +89,33 @@ export interface Reservation {
   updated_at: string;
 }
 
+export type RentalStatus = "pending" | "confirmed" | "denied" | "cancelled";
+
+export interface Rental {
+  id: string;
+  user_id: string;
+  band_or_event_name: string | null;
+  details: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  status: RentalStatus;
+  total_price: number;
+  owner_message: string | null;
+  cancellation_reason: string | null;
+  cancelled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RentalItemRecord {
+  id: string;
+  rental_id: string;
+  item_id: string;
+  quantity: number;
+  unit_price: number;
+  created_at: string;
+}
+
 export interface ReservationItem {
   id: string;
   reservation_id: string;
@@ -136,6 +163,16 @@ export interface Database {
         Row: ReservationItem;
         Insert: Omit<ReservationItem, "id" | "created_at">;
         Update: Partial<Omit<ReservationItem, "id" | "created_at">>;
+      };
+      rentals: {
+        Row: Rental;
+        Insert: Omit<Rental, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Rental, "id" | "created_at">>;
+      };
+      rental_request_items: {
+        Row: RentalItemRecord;
+        Insert: Omit<RentalItemRecord, "id" | "created_at">;
+        Update: Partial<Omit<RentalItemRecord, "id" | "created_at">>;
       };
     };
     Views: {

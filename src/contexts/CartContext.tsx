@@ -3,6 +3,8 @@ import type { RentalItem } from "@/types/database";
 
 type CartLine = { itemId: string; qty: number };
 
+export type CartLineDetail = { itemId: string; qty: number; lineTotal: number };
+
 interface CartContextValue {
   lines: CartLine[];
   add: (id: string) => void;
@@ -10,15 +12,18 @@ interface CartContextValue {
   remove: (id: string) => void;
   clear: () => void;
   count: number;
+  detailed: CartLineDetail[];
+  subtotal: number;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 interface CartProviderProps {
   children: ReactNode;
+  items?: RentalItem[];
 }
 
-export const CartProvider = ({ children }: CartProviderProps) => {
+export const CartProvider = ({ children, items = [] }: CartProviderProps) => {
   const [lines, setLines] = useState<CartLine[]>([]);
 
   const add = (id: string) =>
@@ -38,8 +43,21 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   const count = lines.reduce((a, l) => a + l.qty, 0);
 
+  const detailed = useMemo(() => {
+    return lines.map((line) => {
+      const item = items.find((i) => i.id === line.itemId);
+      return {
+        itemId: line.itemId,
+        qty: line.qty,
+        lineTotal: item ? item.price_rental * line.qty : 0,
+      };
+    });
+  }, [lines, items]);
+
+  const subtotal = useMemo(() => detailed.reduce((a, l) => a + l.lineTotal, 0), [detailed]);
+
   return (
-    <CartContext.Provider value={{ lines, add, setQty, remove, clear, count }}>
+    <CartContext.Provider value={{ lines, add, setQty, remove, clear, count, detailed, subtotal }}>
       {children}
     </CartContext.Provider>
   );
@@ -51,10 +69,9 @@ export const useCart = () => {
   return ctx;
 };
 
-// Helper to compute detailed cart info from lines + items catalog
-export function useCartDetailed(items: RentalItem[]) {
+// Internal helper — useCart().detailed is preferred when items are available via context
+function useCartDetailedHelper(items: RentalItem[]) {
   const { lines } = useCart();
-
   return useMemo(() => {
     return lines
       .map((line) => {
@@ -65,3 +82,5 @@ export function useCartDetailed(items: RentalItem[]) {
       .filter(Boolean) as { item: RentalItem; qty: number; lineTotal: number }[];
   }, [lines, items]);
 }
+
+export { useCartDetailedHelper as useCartDetailed };

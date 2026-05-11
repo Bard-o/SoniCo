@@ -142,7 +142,7 @@ const ReservationDetail = () => {
       <AppShell role="user">
         <div className="container-app py-8">
           <Link
-            to="/app/reservations"
+            to="/app"
             className="inline-flex items-center gap-1.5 text-sm text-foreground/60 hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" /> Volver a Mis reservas
@@ -151,7 +151,7 @@ const ReservationDetail = () => {
         <div className="container-app py-16 text-center">
           <p className="text-foreground/60">Reserva no encontrada.</p>
           <Button asChild className="mt-4" variant="cta">
-            <Link to="/app/reservations">Ver mis reservas</Link>
+            <Link to="/app">Ver mis solicitudes</Link>
           </Button>
         </div>
       </AppShell>
@@ -169,7 +169,7 @@ const ReservationDetail = () => {
       <div className="border-b border-border gradient-warm">
         <div className="container-app py-8">
           <Link
-            to="/app/reservations"
+            to="/app"
             className="inline-flex items-center gap-1.5 text-sm text-foreground/60 hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" /> Volver a Mis reservas

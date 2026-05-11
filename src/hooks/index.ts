@@ -4,3 +4,8 @@ export { useReservation } from "./useReservation";
 export { useCreateReservation } from "./useCreateReservation";
 export { useWithdrawReservation } from "./useWithdrawReservation";
 export { useOwnerPendingReservations } from "./useOwnerPendingReservations";
+export { useCreateRental } from "./useCreateRental";
+export { useRentals } from "./useRentals";
+export { useRental } from "./useRental";
+export { useWithdrawRental } from "./useWithdrawRental";
+export { useOwnerPendingRentals } from "./useOwnerPendingRentals";
