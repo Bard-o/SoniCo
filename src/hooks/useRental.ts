@@ -31,7 +31,7 @@ export function useRental(id: string | null) {
         .from("rentals")
         .select(`
           *,
-          items:rental_items(id, item_id, quantity, unit_price, item:items(name))
+          items:rental_request_items(id, item_id, quantity, unit_price, item:items(name))
         `)
         .eq("id", id)
         .single();

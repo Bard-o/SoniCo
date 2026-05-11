@@ -20,7 +20,7 @@ CREATE TABLE rentals (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE rental_items (
+CREATE TABLE rental_request_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   rental_id uuid NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
   item_id uuid NOT NULL REFERENCES items(id),
@@ -32,10 +32,10 @@ CREATE TABLE rental_items (
 CREATE INDEX idx_rentals_user_id ON rentals(user_id);
 CREATE INDEX idx_rentals_status ON rentals(status);
 CREATE INDEX idx_rentals_start_datetime ON rentals(start_datetime);
-CREATE INDEX idx_rental_items_rental_id ON rental_items(rental_id);
+CREATE INDEX idx_rental_request_items_rental_id ON rental_request_items(rental_id);
 
 ALTER TABLE rentals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rental_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rental_request_items ENABLE ROW LEVEL SECURITY;
 
 -- RLS: rentals
 CREATE POLICY "Users select own rentals" ON rentals
@@ -53,16 +53,16 @@ CREATE POLICY "Owners update all rentals" ON rentals
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner')
   );
 
--- RLS: rental_items
-CREATE POLICY "Users select own rental_items" ON rental_items
+-- RLS: rental_request_items
+CREATE POLICY "Users select own rental_request_items" ON rental_request_items
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM rentals WHERE id = rental_id AND user_id = auth.uid())
   );
-CREATE POLICY "Users insert own rental_items" ON rental_items
+CREATE POLICY "Users insert own rental_request_items" ON rental_request_items
   FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM rentals WHERE id = rental_id AND user_id = auth.uid())
   );
-CREATE POLICY "Owners select all rental_items" ON rental_items
+CREATE POLICY "Owners select all rental_request_items" ON rental_request_items
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'owner')
   );

@@ -40,7 +40,7 @@ export function useRentals(filters?: UseRentalsFilters) {
     try {
       let query = supabase
         .from("rentals")
-        .select("*, items:rental_items(id, item_id, quantity, unit_price, item:items(name))")
+        .select("*, items:rental_request_items(id, item_id, quantity, unit_price, item:items(name))")
         .eq("user_id", user.id)
         .order("start_datetime", { ascending: false });
 

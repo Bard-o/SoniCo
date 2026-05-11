@@ -54,7 +54,7 @@ export function useCreateRental() {
 
       // Insert rental items
       if (params.items.length > 0) {
-        const { error: itemsErr } = await supabase.from("rental_items").insert(
+        const { error: itemsErr } = await supabase.from("rental_request_items").insert(
           params.items.map((item) => ({
             rental_id: rentalData.id,
             item_id: item.item_id,

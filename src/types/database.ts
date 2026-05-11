@@ -169,7 +169,7 @@ export interface Database {
         Insert: Omit<Rental, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<Rental, "id" | "created_at">>;
       };
-      rental_items: {
+      rental_request_items: {
         Row: RentalItemRecord;
         Insert: Omit<RentalItemRecord, "id" | "created_at">;
         Update: Partial<Omit<RentalItemRecord, "id" | "created_at">>;
