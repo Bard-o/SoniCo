@@ -375,6 +375,18 @@ const RequestReservation = () => {
                           />
                         </PopoverContent>
                       </Popover>
+                      {date && settings && (() => {
+                        const dayName = DAYS_OF_WEEK[date.getDay()];
+                        const range = settings.hours_per_day[dayName];
+                        if (!range || range.length < 2) return null;
+                        const open = `${String(range[0]).padStart(2, "0")}:00`;
+                        const close = `${String(range[1]).padStart(2, "0")}:00`;
+                        return (
+                          <p className="mt-1.5 text-xs text-foreground/50">
+                            Horario del estudio: {open} a {close}
+                          </p>
+                        );
+                      })()}
                     </div>
 
                     <div>
