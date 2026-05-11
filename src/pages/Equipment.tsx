@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { Footer } from "@/components/layout/Footer";
 import { ItemCard } from "@/components/equipment/ItemCard";
 import { CartSummary } from "@/components/equipment/CartSummary";
 import { useRentalItems } from "@/hooks/useRentalItems";
@@ -57,7 +57,7 @@ const Equipment = () => {
             ))}
           </div>
         </div>
-        <SiteFooter />
+        <Footer />
       </div>
     );
   }
@@ -85,7 +85,7 @@ const Equipment = () => {
             </Button>
           </div>
         </div>
-        <SiteFooter />
+        <Footer />
       </div>
     );
   }
@@ -178,7 +178,7 @@ const Equipment = () => {
         </div>
       </section>
 
-      <SiteFooter />
+      <Footer />
     </div>
   );
 };

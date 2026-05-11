@@ -199,8 +199,8 @@ const OwnerRoomForm = () => {
         </div>
       </section>
 
-      <section className="container-app grid gap-8 py-12 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
+      <section className="container-app py-12">
+        <div className="mx-auto max-w-3xl space-y-8">
           <div className="card-surface bg-card p-6">
             <h2 className="sub-heading">Información básica</h2>
             <div className="mt-6 space-y-5">
@@ -217,7 +217,7 @@ const OwnerRoomForm = () => {
                   <Label htmlFor="price">Precio por 30 min</Label>
                   <Input id="price" type="number" min={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
                 </div>
-                <div className="flex items-end justify-between rounded-sm border border-border p-3">
+                <div className="flex items-center justify-between rounded-sm border border-border p-3">
                   <div>
                     <p className="text-sm font-medium">Sala activa</p>
                     <p className="text-xs text-foreground/55">Visible y reservable.</p>
@@ -250,21 +250,11 @@ const OwnerRoomForm = () => {
                 </div>
               ))}
               {photos.length < 4 && (
-                <div>
-                  {editing && room ? (
-                    <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-foreground/25 text-foreground/55 transition hover:border-foreground/45 hover:text-foreground">
-                      <ImagePlus className="h-5 w-5" />
-                      <span className="text-xs">Subir</span>
-                      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
-                    </label>
-                  ) : (
-                    <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-foreground/25 text-foreground/55 transition hover:border-foreground/45 hover:text-foreground">
-                      <ImagePlus className="h-5 w-5" />
-                      <span className="text-xs">Subir</span>
-                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
-                    </label>
-                  )}
-                </div>
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-foreground/25 text-foreground/55 transition hover:border-foreground/45 hover:text-foreground">
+                  <ImagePlus className="h-5 w-5" />
+                  <span className="text-xs">Subir</span>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+                </label>
               )}
             </div>
             {isUploading && <p className="mt-2 text-xs text-foreground/55">Subiendo foto…</p>}
@@ -397,25 +387,17 @@ const OwnerRoomForm = () => {
               ))}
             </div>
           </div>
-        </div>
 
-        <aside className="lg:sticky lg:top-24 lg:h-fit">
-          <div className="card-surface bg-card p-6">
-            <h3 className="text-sm font-medium uppercase tracking-wider text-foreground/60">Acciones</h3>
-            {saveError && <p className="mt-2 text-xs text-destructive">{saveError}</p>}
-            <div className="mt-4 flex flex-col gap-2">
-              <Button variant="cta" size="lg" onClick={handleSave} disabled={isSaving || !name}>
-                {isSaving ? "Guardando…" : editing ? "Guardar cambios" : "Crear sala"}
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate("/owner/rooms")}>
-                Cancelar
-              </Button>
-            </div>
-            <div className="mt-6 rounded-sm border border-border bg-secondary/40 p-4 text-xs text-foreground/65">
-              Los cambios serán visibles inmediatamente en el catálogo público de salas.
-            </div>
+          {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Button variant="outline" size="lg" onClick={() => navigate("/owner/rooms")}>
+              Cancelar
+            </Button>
+            <Button variant="cta" size="lg" onClick={handleSave} disabled={isSaving || !name}>
+              {isSaving ? "Guardando…" : editing ? "Guardar cambios" : "Crear sala"}
+            </Button>
           </div>
-        </aside>
+        </div>
       </section>
     </AppShell>
   );

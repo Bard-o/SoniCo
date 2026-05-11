@@ -72,6 +72,32 @@ export interface RoomItem {
   updated_at: string;
 }
 
+export type ReservationStatus = "pending" | "confirmed" | "denied" | "cancelled";
+
+export interface Reservation {
+  id: string;
+  user_id: string;
+  room_id: string;
+  band_name: string | null;
+  status: ReservationStatus;
+  start_time: string;
+  end_time: string;
+  total_price: number;
+  cancellation_reason: string | null;
+  cancelled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReservationItem {
+  id: string;
+  reservation_id: string;
+  item_id: string;
+  quantity: number;
+  unit_price: number;
+  created_at: string;
+}
+
 // Supabase-generated types for use with createClient<Database>
 export interface Database {
   public: {
@@ -100,6 +126,16 @@ export interface Database {
         Row: RoomItem;
         Insert: Omit<RoomItem, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<RoomItem, "id" | "created_at">>;
+      };
+      reservations: {
+        Row: Reservation;
+        Insert: Omit<Reservation, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Reservation, "id" | "created_at">>;
+      };
+      reservation_items: {
+        Row: ReservationItem;
+        Insert: Omit<ReservationItem, "id" | "created_at">;
+        Update: Partial<Omit<ReservationItem, "id" | "created_at">>;
       };
     };
     Views: {

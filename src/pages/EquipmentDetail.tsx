@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, Minus, Plus, Trash2 } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRentalItem } from "@/hooks/useRentalItem";
@@ -37,7 +37,7 @@ const EquipmentDetail = () => {
             </div>
           </div>
         </div>
-        <SiteFooter />
+        <Footer />
       </div>
     );
   }
@@ -64,7 +64,7 @@ const EquipmentDetail = () => {
             </Button>
           </div>
         </div>
-        <SiteFooter />
+        <Footer />
       </div>
     );
   }
@@ -193,7 +193,7 @@ const EquipmentDetail = () => {
         </div>
       </div>
 
-      <SiteFooter />
+      <Footer />
     </div>
   );
 };
