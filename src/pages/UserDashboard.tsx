@@ -164,6 +164,7 @@ function ActivityCard({
   // Rental card
   const rental = item.data;
   const firstItem = rental.items?.[0]?.item?.name ?? "Equipo";
+  const firstPhoto = rental.items?.[0]?.item?.photos?.[0];
   const extraCount = (rental.items?.length ?? 1) - 1;
   const title = extraCount > 0 ? `${firstItem} y ${extraCount} más` : firstItem;
   const detailPath = `/app/rentals/${rental.id}`;
@@ -172,8 +173,12 @@ function ActivityCard({
     <article className="card-interactive flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
       <Link to={detailPath} className="flex-1">
         <div className="flex items-start gap-4">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-sm bg-cream sm:h-16 sm:w-24">
-            <span className="block h-8 w-8 gradient-block" aria-hidden />
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-cream sm:h-16 sm:w-24">
+            {firstPhoto ? (
+              <img src={firstPhoto} alt={firstItem} className="h-full w-full object-cover" />
+            ) : (
+              <span className="block h-8 w-8 gradient-block" aria-hidden />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">

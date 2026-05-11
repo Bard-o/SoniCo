@@ -17,7 +17,7 @@ export interface RentalWithItems {
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
-  items?: { id: string; item_id: string; quantity: number; unit_price: number; item?: { name: string } }[];
+  items?: { id: string; item_id: string; quantity: number; unit_price: number; item?: { name: string; photos: string[] } }[];
 }
 
 interface UseRentalsFilters {
@@ -40,7 +40,7 @@ export function useRentals(filters?: UseRentalsFilters) {
     try {
       let query = supabase
         .from("rentals")
-        .select("*, items:rental_request_items(id, item_id, quantity, unit_price, item:items(name))")
+        .select("*, items:rental_request_items(id, item_id, quantity, unit_price, item:items(name, photos))")
         .eq("user_id", user.id)
         .order("start_datetime", { ascending: false });
 
