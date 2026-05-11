@@ -23,7 +23,7 @@ const publicLinks: NavItem[] = [
 ];
 
 const userLinks: NavItem[] = [
-  { to: "/app/reservations", label: "Mis reservas" },
+  { to: "/app", label: "Mis solicitudes", end: true },
   { to: "/rooms", label: "Salas" },
   { to: "/equipment", label: "Alquiler de equipo" },
 ];
@@ -72,7 +72,7 @@ export const Navbar = () => {
       </NavLink>
     ));
 
-  const dashboardPath = isOwner ? "/owner" : "/app/reservations";
+  const dashboardPath = isOwner ? "/owner" : "/app";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur-md">
