@@ -23,6 +23,7 @@ import OwnerItemForm from "./pages/OwnerItemForm.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Equipment from "./pages/Equipment.tsx";
 import EquipmentDetail from "./pages/EquipmentDetail.tsx";
+import RequestRental from "./pages/RequestRental.tsx";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<Navigate to="/app/reservations" replace />} />
+              <Route path="/equipment/request" element={<RequestRental />} />
               <Route path="/rooms/:slug/reserve" element={<RequestReservation />} />
               <Route path="/app/reservations" element={<MyReservations />} />
               <Route path="/app/reservations/:id" element={<ReservationDetail />} />
