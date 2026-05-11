@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Info, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRoom } from "@/hooks/useRoom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -107,12 +107,12 @@ const RoomDetail = () => {
                     className="aspect-[16/10] w-full object-cover"
                   />
                 </div>
-                <div className="mt-3 flex gap-3">
+                <div className="mt-3 flex gap-2 overflow-x-auto md:gap-3">
                   {photos.map((g, i) => (
                     <button
                       key={i}
                       onClick={() => setActivePhoto(i)}
-                      className={`relative h-20 w-28 overflow-hidden rounded-sm transition-all ${
+                      className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-sm transition-all md:h-20 md:w-28 ${
                         i === activePhoto ? "ring-2 ring-primary" : "opacity-60 hover:opacity-100"
                       }`}
                     >
@@ -191,28 +191,28 @@ const RoomDetail = () => {
               </div>
 
               <div className="mt-6 overflow-x-auto">
-                <div className="min-w-[640px]">
-                  <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1">
+                <div className="min-w-[480px] md:min-w-[560px] lg:min-w-[640px]">
+                  <div className="grid grid-cols-[50px_repeat(7,1fr)] gap-0.5 md:gap-1">
                     <div />
                     {days.map((d) => (
-                      <div key={d} className="pb-3 text-center text-[11px] uppercase tracking-wider text-foreground/55">{d}</div>
+                      <div key={d} className="pb-2 text-center text-[10px] uppercase tracking-wider text-foreground/55 md:text-[11px]">{d.slice(0, 3)}</div>
                     ))}
                     {slots.map((time) => (
                       <Fragment key={time}>
-                        <div className="self-center pr-2 text-right text-[11px] text-foreground/55">{time}</div>
+                        <div className="self-center pr-1 text-right text-[10px] text-foreground/55 md:text-[11px]">{time}</div>
                         {days.map((_, di) => {
                           const isBooked = bookedKey.has(`${di}-${time}`);
                           return (
                             <button
                               key={`${di}-${time}`}
                               disabled={isBooked || !room.is_active}
-                              className={`group relative h-8 rounded-sm text-[10px] transition-all ${
+                              className={`group relative h-6 rounded-sm text-[9px] transition-all md:h-8 md:text-[10px] ${
                                 isBooked
                                   ? "bg-foreground/10 text-foreground/40"
                                   : "bg-cream hover:bg-primary hover:text-primary-foreground"
                               }`}
                             >
-                              {isBooked ? <Lock className="mx-auto h-3 w-3" /> : ""}
+                              {isBooked ? <Lock className="mx-auto h-2.5 w-2.5 md:h-3 md:w-3" /> : ""}
                             </button>
                           );
                         })}
@@ -273,7 +273,7 @@ const RoomDetail = () => {
         </div>
       </div>
 
-      <SiteFooter />
+      <Footer />
     </div>
   );
 };

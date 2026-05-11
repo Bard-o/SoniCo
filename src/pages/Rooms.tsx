@@ -1,5 +1,5 @@
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { Footer } from "@/components/layout/Footer";
 import { RoomCard } from "@/components/RoomCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRooms } from "@/hooks/useRooms";
@@ -48,7 +48,7 @@ const Rooms = () => {
           )}
         </div>
       </section>
-      <SiteFooter />
+      <Footer />
     </div>
   );
 };

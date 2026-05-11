@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "./Navbar";
+import { Footer } from "./Footer";
 
 export const AppShell = ({
   role = "user",
@@ -49,12 +50,7 @@ export const AppShell = ({
 
       <main>{children}</main>
 
-      <footer className="border-t border-border">
-        <div className="container-app flex h-14 items-center justify-between text-xs text-foreground/55">
-          <p>© {new Date().getFullYear()} SoniCo Studios.</p>
-          <p>Hecho con cariño para músicos.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
