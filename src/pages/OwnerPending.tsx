@@ -310,6 +310,17 @@ const OwnerPending = () => {
         return;
       }
 
+      // No conflicts — proceed with Phase 2 (confirm = true)
+      const confirmResult =
+        type === "reservation"
+          ? await approveReservation(id, undefined, true)
+          : await approveRental(id, undefined, true);
+
+      if (!confirmResult.success) {
+        toast.error(confirmResult.error ?? "Error al aprobar la solicitud");
+        return;
+      }
+
       toast.success("Solicitud aprobada correctamente");
       refetch();
     } finally {
