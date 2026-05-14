@@ -217,9 +217,11 @@ interface ItemCardProps {
   onDeny: (id: string, type: "reservation" | "rental") => void;
   approvingId: string | null;
   denyingId: string | null;
+  conflictCount: number;
+  crossConflictCount: number;
 }
 
-function ItemCard({ item, onApprove, onDeny, approvingId, denyingId }: ItemCardProps) {
+function ItemCard({ item, onApprove, onDeny, approvingId, denyingId, conflictCount, crossConflictCount }: ItemCardProps) {
   const isApproving = approvingId === item.id;
   const isDenying = denyingId === item.id;
   const isProcessing = isApproving || isDenying;
@@ -227,7 +229,14 @@ function ItemCard({ item, onApprove, onDeny, approvingId, denyingId }: ItemCardP
   return (
     <div className="card-surface flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
       <div className="flex-1">
-        <p className="text-sm font-medium">{item.title}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-medium">{item.title}</p>
+          {(conflictCount > 0 || crossConflictCount > 0) && (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-destructive/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive">
+              ⚠ Conflicto
+            </span>
+          )}
+        </div>
         <p className="mt-0.5 text-sm text-foreground/70">
           {item.dateStr} · {item.timeStr}
         </p>
@@ -287,6 +296,7 @@ const OwnerPending = () => {
     id: string;
     type: "reservation" | "rental";
   } | null>(null);
+  const [conflictMap, setConflictMap] = useState<Record<string, { count: number; crossCount: number }>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [denyingId, setDenyingId] = useState<string | null>(null);
 
@@ -323,6 +333,13 @@ const OwnerPending = () => {
       const conflicts = result.data?.conflicts ?? 0;
       const crossConflicts = result.data?.cross_conflicts ?? 0;
       const crossType = result.data?.cross_conflict_type as string | undefined;
+
+      // Store conflicts for inline badge
+      if (conflicts > 0 || crossConflicts > 0) {
+        setConflictMap((prev) => ({ ...prev, [id]: { count: conflicts, crossCount: crossConflicts } }));
+      } else {
+        setConflictMap((prev) => { const next = { ...prev }; delete next[id]; return next; });
+      }
 
       if (conflicts > 0 || crossConflicts > 0) {
         setConflictModal({ id, type, count: conflicts, crossCount: crossConflicts, crossType });
@@ -497,6 +514,8 @@ const OwnerPending = () => {
                     onDeny={handleDeny}
                     approvingId={approvingId}
                     denyingId={denyingId}
+                    conflictCount={conflictMap[item.id]?.count ?? 0}
+                    crossConflictCount={conflictMap[item.id]?.crossCount ?? 0}
                   />
                 ))}
               </div>
@@ -520,6 +539,8 @@ const OwnerPending = () => {
                     onDeny={handleDeny}
                     approvingId={approvingId}
                     denyingId={denyingId}
+                    conflictCount={conflictMap[item.id]?.count ?? 0}
+                    crossConflictCount={conflictMap[item.id]?.crossCount ?? 0}
                   />
                 ))}
               </div>
@@ -543,6 +564,8 @@ const OwnerPending = () => {
                     onDeny={handleDeny}
                     approvingId={approvingId}
                     denyingId={denyingId}
+                    conflictCount={conflictMap[item.id]?.count ?? 0}
+                    crossConflictCount={conflictMap[item.id]?.crossCount ?? 0}
                   />
                 ))}
               </div>
