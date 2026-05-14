@@ -122,22 +122,36 @@ function makeRentalItem(r: PendingRental): PendingItem {
 
 interface ConflictModalProps {
   conflictCount: number;
+  crossConflictCount: number;
+  crossConflictType?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-function ConflictModal({ conflictCount, onConfirm, onCancel }: ConflictModalProps) {
+function ConflictModal({ conflictCount, crossConflictCount, crossConflictType, onConfirm, onCancel }: ConflictModalProps) {
+  const crossLabel = crossConflictType === "rental" ? "alquileres" : "reservas";
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirmar aprobación</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-foreground/70">
-          Aprobar esta solicitud denegará automáticamente{" "}
-          <strong>{conflictCount} solicitud{conflictCount > 1 ? "es" : ""}</strong>{" "}
-          pendiente{conflictCount > 1 ? "s" : ""} para el mismo horario. ¿Deseas continuar?
-        </p>
+        {conflictCount > 0 && (
+          <p className="text-sm text-foreground/70">
+            Aprobar esta solicitud denegará automáticamente{" "}
+            <strong>{conflictCount} solicitud{conflictCount > 1 ? "es" : ""}</strong>{" "}
+            pendiente{conflictCount > 1 ? "s" : ""} para el mismo horario.
+          </p>
+        )}
+        {crossConflictCount > 0 && (
+          <p className="mt-2 text-sm text-foreground/70">
+            ⚠️ Además, hay{" "}
+            <strong>{crossConflictCount} {crossConflictCount > 1 ? crossLabel : crossLabel.slice(0, -1)}</strong>{" "}
+            pendiente{crossConflictCount > 1 ? "s" : ""} que usan los mismos equipos en este horario.
+            No se denegarán automáticamente, pero podrían quedar bloqueadas.
+          </p>
+        )}
+        <p className="mt-2 text-sm text-foreground/60">¿Deseas continuar?</p>
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={onCancel}>
             Cancelar
@@ -266,6 +280,8 @@ const OwnerPending = () => {
     id: string;
     type: "reservation" | "rental";
     count: number;
+    crossCount: number;
+    crossType?: string;
   } | null>(null);
   const [denyDialog, setDenyDialog] = useState<{
     id: string;
@@ -305,8 +321,11 @@ const OwnerPending = () => {
       }
 
       const conflicts = result.data?.conflicts ?? 0;
-      if (conflicts > 0) {
-        setConflictModal({ id, type, count: conflicts });
+      const crossConflicts = result.data?.cross_conflicts ?? 0;
+      const crossType = result.data?.cross_conflict_type as string | undefined;
+
+      if (conflicts > 0 || crossConflicts > 0) {
+        setConflictModal({ id, type, count: conflicts, crossCount: crossConflicts, crossType });
         return;
       }
 
@@ -536,6 +555,8 @@ const OwnerPending = () => {
       {conflictModal && (
         <ConflictModal
           conflictCount={conflictModal.count}
+          crossConflictCount={conflictModal.crossCount}
+          crossConflictType={conflictModal.crossType}
           onConfirm={handleConfirmApprove}
           onCancel={() => setConflictModal(null)}
         />

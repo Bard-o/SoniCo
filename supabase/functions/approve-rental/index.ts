@@ -7,36 +7,6 @@ interface ApproveRentalRequest {
   confirm?: boolean;
 }
 
-interface RentalRow {
-  id: string;
-  user_id: string;
-  band_or_event_name: string | null;
-  details: string | null;
-  start_datetime: string;
-  end_datetime: string;
-  status: string;
-  total_price: number;
-  owner_message: string | null;
-}
-
-interface RentalRequestItemRow {
-  id: string;
-  item_id: string;
-  quantity: number;
-  unit_price: number;
-}
-
-interface ItemRow {
-  id: string;
-  name: string;
-  quantity: number;
-}
-
-interface ProfileRow {
-  id: string;
-  role: string;
-}
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -44,10 +14,7 @@ const corsHeaders = {
 };
 
 function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
 serve(async (req: Request) => {
@@ -57,344 +24,226 @@ serve(async (req: Request) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return jsonResponse({ error: "Missing Authorization header" }, 401);
-    }
+    if (!authHeader) return jsonResponse({ error: "Missing Authorization header" }, 401);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
-    });
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return jsonResponse({ error: "Invalid or expired token" }, 401);
 
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Verify caller is owner
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("id", user.id)
-      .single<ProfileRow>();
-
-    if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: "Profile not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (profile.role !== "owner") {
-      return new Response(JSON.stringify({ error: "Only owners can approve rentals" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+      .from("profiles").select("id, role").eq("id", user.id).single();
+    if (profileError || !profile) return jsonResponse({ error: "Profile not found" }, 404);
+    if (profile.role !== "owner") return jsonResponse({ error: "Only owners can approve rentals" }, 403);
 
     const body: ApproveRentalRequest = await req.json();
     const { rental_id, owner_message, confirm } = body;
-
-    if (!rental_id) {
-      return new Response(JSON.stringify({ error: "rental_id is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!rental_id) return jsonResponse({ error: "rental_id is required" }, 400);
 
     // Fetch rental
     const { data: rental, error: fetchError } = await supabase
       .from("rentals")
-      .select("id, user_id, band_or_event_name, details, start_datetime, end_datetime, status, total_price, owner_message")
-      .eq("id", rental_id)
-      .single<RentalRow>();
+      .select("id, user_id, band_or_event_name, start_datetime, end_datetime, status")
+      .eq("id", rental_id).single();
 
-    if (fetchError || !rental) {
-      return new Response(JSON.stringify({ error: "Rental not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Race condition guard
+    if (fetchError || !rental) return jsonResponse({ error: "Rental not found" }, 404);
     if (rental.status !== "pending") {
-      return new Response(
-        JSON.stringify({ error: `Rental is no longer pending (current status: ${rental.status})` }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: `Rental is no longer pending (current status: ${rental.status})` }, 400);
     }
 
-    // Fetch rental request items
-    const { data: rentalItems, error: itemsError } = await supabase
-      .from("rental_request_items")
-      .select("id, item_id, quantity, unit_price")
+    // Fetch rental items
+    const { data: rentalItems } = await supabase
+      .from("rental_request_items").select("id, item_id, quantity")
       .eq("rental_id", rental_id);
 
-    if (itemsError) {
-      return new Response(JSON.stringify({ error: "Failed to fetch rental items" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const rentalName = rental.band_or_event_name ?? "Alquiler";
 
-    // Phase 1: Check conflicts without modifying
+    // Phase 1: Check conflicts
     if (!confirm) {
-      // Check item availability against confirmed rentals and confirmed reservation add-ons
+      // 1. Check item availability against CONFIRMED rentals + CONFIRMED reservation add-ons
       if (rentalItems && rentalItems.length > 0) {
-        const unavailableItems: { item_id: string; name: string; requested: number; available: number }[] = [];
-
         for (const ri of rentalItems) {
-          const { data: item, error: itemError } = await supabase
-            .from("items")
-            .select("id, name, quantity")
-            .eq("id", ri.item_id)
-            .single<ItemRow>();
+          const { data: item } = await supabase.from("items").select("id, name, quantity").eq("id", ri.item_id).single();
+          if (!item) continue;
 
-          if (itemError || !item) continue;
-
-          // Count committed units from confirmed rental_request_items
           const { data: confirmedRentalItems } = await supabase
             .from("rental_request_items")
             .select("quantity, rentals!inner(start_datetime, end_datetime, status)")
-            .eq("item_id", ri.item_id)
-            .eq("rentals.status", "confirmed")
-            .neq("rental_id", rental_id)
-            .lt("rentals.start_datetime", rental.end_datetime)
-            .gt("rentals.end_datetime", rental.start_datetime);
+            .eq("item_id", ri.item_id).eq("rentals.status", "confirmed").neq("rental_id", rental_id)
+            .lt("rentals.start_datetime", rental.end_datetime).gt("rentals.end_datetime", rental.start_datetime);
 
-          // Count committed units from confirmed reservation_items (add-ons)
-          const { data: confirmedReservationItems } = await supabase
+          const { data: confirmedResItems } = await supabase
             .from("reservation_items")
             .select("quantity, reservations!inner(start_time, end_time, status)")
-            .eq("item_id", ri.item_id)
-            .eq("reservations.status", "confirmed")
-            .lt("reservations.start_time", rental.end_datetime)
-            .gt("reservations.end_time", rental.start_datetime);
+            .eq("item_id", ri.item_id).eq("reservations.status", "confirmed")
+            .lt("reservations.start_time", rental.end_datetime).gt("reservations.end_time", rental.start_datetime);
 
-          const committedFromRentals = confirmedRentalItems?.reduce((sum, ci) => sum + ci.quantity, 0) ?? 0;
-          const committedFromReservations = confirmedReservationItems?.reduce((sum, ci) => sum + ci.quantity, 0) ?? 0;
-          const committedUnits = committedFromRentals + committedFromReservations;
-          const available = item.quantity - committedUnits;
+          const usedRentals = confirmedRentalItems?.reduce((s: number, c: any) => s + c.quantity, 0) ?? 0;
+          const usedRes = confirmedResItems?.reduce((s: number, c: any) => s + c.quantity, 0) ?? 0;
+          const available = item.quantity - usedRentals - usedRes;
 
           if (ri.quantity > available) {
-            unavailableItems.push({
-              item_id: ri.item_id,
-              name: item.name,
-              requested: ri.quantity,
-              available,
-            });
+            return jsonResponse({
+              error: `Item '${item.name}' is not available for this time slot`,
+              unavailable_items: [{ item_id: ri.item_id, name: item.name, requested: ri.quantity, available }],
+            }, 409);
           }
         }
+      }
 
-        if (unavailableItems.length > 0) {
-          return new Response(
-            JSON.stringify({
-              error: `Item '${unavailableItems[0].name}' is not available for this time slot`,
-              unavailable_items: unavailableItems,
-            }),
-            { status: 409, headers: { "Content-Type": "application/json" } }
-          );
+      // 2. Same-type conflicts: overlapping pending rentals with same items (will auto-deny)
+      let conflictIds: string[] = [];
+      if (rentalItems && rentalItems.length > 0) {
+        const itemIds = rentalItems.map((ri: any) => ri.item_id);
+
+        const { data: overlappingRentals } = await supabase
+          .from("rentals")
+          .select("id, rental_request_items!inner(item_id)")
+          .eq("status", "pending").neq("id", rental_id)
+          .lt("start_datetime", rental.end_datetime).gt("end_datetime", rental.start_datetime);
+
+        if (overlappingRentals) {
+          conflictIds = overlappingRentals
+            .filter((r: any) => {
+              const items = r.rental_request_items ?? [];
+              return items.some((ri: any) => itemIds.includes(ri.item_id));
+            })
+            .map((r: any) => r.id);
         }
       }
 
-      // Find overlapping pending rentals for the same items
-      const { data: overlappingPending, error: overlapError } = await supabase
-        .from("rentals")
-        .select("id, rental_request_items!inner(item_id)")
-        .eq("status", "pending")
-        .neq("id", rental_id)
-        .lt("start_datetime", rental.end_datetime)
-        .gt("end_datetime", rental.start_datetime);
+      // 3. Cross-type conflicts: check if pending RESERVATIONS have same items as add-ons
+      let crossConflictIds: string[] = [];
+      if (rentalItems && rentalItems.length > 0) {
+        const itemIds = rentalItems.map((ri: any) => ri.item_id);
 
-      if (overlapError) {
-        return new Response(JSON.stringify({ error: "Failed to check overlapping rentals" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        const { data: conflictingReservations } = await supabase
+          .from("reservations")
+          .select("id, reservation_items!inner(item_id)")
+          .eq("status", "pending")
+          .lt("start_time", rental.end_datetime).gt("end_time", rental.start_datetime);
+
+        if (conflictingReservations) {
+          crossConflictIds = conflictingReservations
+            .filter((r: any) => {
+              const items = r.reservation_items ?? [];
+              return items.some((ri: any) => itemIds.includes(ri.item_id));
+            })
+            .map((r: any) => r.id);
+        }
       }
 
-      // Filter to those requesting overlapping items
-      const rentalItemIds = rentalItems?.map((ri) => ri.item_id) ?? [];
-      const conflictingRentals = overlappingPending?.filter((rental: any) => {
-        const items = rental.rental_request_items ?? [];
-        return items.some((ri: any) => rentalItemIds.includes(ri.item_id));
-      }) ?? [];
+      const crossMsg = crossConflictIds.length > 0
+        ? `Also, ${crossConflictIds.length} pending room reservation(s) include the same items as add-ons during this time.`
+        : "";
 
-      const conflictIds = conflictingRentals.map((r: any) => r.id);
-      const message =
-        conflictIds.length > 0
-          ? `Approving this rental will automatically deny ${conflictIds.length} other pending rental(s) for overlapping items and time slots.`
-          : "No conflicts detected.";
+      const msgParts: string[] = [];
+      if (conflictIds.length > 0) {
+        msgParts.push(`Approving will auto-deny ${conflictIds.length} other pending rental(s) with overlapping items.`);
+      }
+      if (crossMsg) msgParts.push(crossMsg);
+      if (msgParts.length === 0) msgParts.push("No conflicts detected.");
 
-      return new Response(
-        JSON.stringify({
-          conflicts: conflictIds.length,
-          conflict_ids: conflictIds,
-          message,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonResponse({
+        conflicts: conflictIds.length,
+        conflict_ids: conflictIds,
+        cross_conflicts: crossConflictIds.length,
+        cross_conflict_ids: crossConflictIds,
+        cross_conflict_type: "reservation",
+        message: msgParts.join(" "),
+      });
     }
 
-    // Phase 2: confirm = true — perform the approval
+    // Phase 2: confirm = true
     // Re-check item availability
     if (rentalItems && rentalItems.length > 0) {
       for (const ri of rentalItems) {
-        const { data: item, error: itemError } = await supabase
-          .from("items")
-          .select("id, name, quantity")
-          .eq("id", ri.item_id)
-          .single<ItemRow>();
-
-        if (itemError || !item) continue;
+        const { data: item } = await supabase.from("items").select("id, name, quantity").eq("id", ri.item_id).single();
+        if (!item) continue;
 
         const { data: confirmedRentalItems } = await supabase
           .from("rental_request_items")
           .select("quantity, rentals!inner(start_datetime, end_datetime, status)")
-          .eq("item_id", ri.item_id)
-          .eq("rentals.status", "confirmed")
-          .neq("rental_id", rental_id)
-          .lt("rentals.start_datetime", rental.end_datetime)
-          .gt("rentals.end_datetime", rental.start_datetime);
+          .eq("item_id", ri.item_id).eq("rentals.status", "confirmed").neq("rental_id", rental_id)
+          .lt("rentals.start_datetime", rental.end_datetime).gt("rentals.end_datetime", rental.start_datetime);
 
-        const { data: confirmedReservationItems } = await supabase
+        const { data: confirmedResItems } = await supabase
           .from("reservation_items")
           .select("quantity, reservations!inner(start_time, end_time, status)")
-          .eq("item_id", ri.item_id)
-          .eq("reservations.status", "confirmed")
-          .lt("reservations.start_time", rental.end_datetime)
-          .gt("reservations.end_time", rental.start_datetime);
+          .eq("item_id", ri.item_id).eq("reservations.status", "confirmed")
+          .lt("reservations.start_time", rental.end_datetime).gt("reservations.end_time", rental.start_datetime);
 
-        const committedFromRentals = confirmedRentalItems?.reduce((sum, ci) => sum + ci.quantity, 0) ?? 0;
-        const committedFromReservations = confirmedReservationItems?.reduce((sum, ci) => sum + ci.quantity, 0) ?? 0;
-        const committedUnits = committedFromRentals + committedFromReservations;
-        const available = item.quantity - committedUnits;
+        const usedRentals = confirmedRentalItems?.reduce((s: number, c: any) => s + c.quantity, 0) ?? 0;
+        const usedRes = confirmedResItems?.reduce((s: number, c: any) => s + c.quantity, 0) ?? 0;
 
-        if (ri.quantity > available) {
-          return new Response(
-            JSON.stringify({
-              error: `Item '${item.name}' is not available for this time slot`,
-              unavailable_items: [{ item_id: ri.item_id, name: item.name, requested: ri.quantity, available }],
-            }),
-            { status: 409, headers: { "Content-Type": "application/json" } }
-          );
+        if (ri.quantity > item.quantity - usedRentals - usedRes) {
+          return jsonResponse({
+            error: `Item '${item.name}' is not available for this time slot`,
+            unavailable_items: [{ item_id: ri.item_id, name: item.name, requested: ri.quantity, available: item.quantity - usedRentals - usedRes }],
+          }, 409);
         }
       }
     }
 
-    // Update rental to confirmed
+    // Update to confirmed
     const { error: updateError } = await supabase
       .from("rentals")
-      .update({
-        status: "confirmed",
-        owner_message: owner_message ?? null,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: "confirmed", owner_message: owner_message ?? null, updated_at: new Date().toISOString() })
       .eq("id", rental_id);
+    if (updateError) return jsonResponse({ error: "Failed to confirm rental" }, 500);
 
-    if (updateError) {
-      return new Response(JSON.stringify({ error: "Failed to confirm rental" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Auto-deny overlapping pending rentals with same items
+    let autoDeniedIds: string[] = [];
+    if (rentalItems && rentalItems.length > 0) {
+      const itemIds = rentalItems.map((ri: any) => ri.item_id);
 
-    // Find overlapping pending rentals for the same items
-    const { data: overlappingPendingDeny } = await supabase
-      .from("rentals")
-      .select("id, user_id, rental_request_items!inner(item_id)")
-      .eq("status", "pending")
-      .neq("id", rental_id)
-      .lt("start_datetime", rental.end_datetime)
-      .gt("end_datetime", rental.start_datetime);
-
-    const rentalItemIds = rentalItems?.map((ri) => ri.item_id) ?? [];
-    const conflictingRentalsDeny = overlappingPendingDeny?.filter((rental: any) => {
-      const items = rental.rental_request_items ?? [];
-      return items.some((ri: any) => rentalItemIds.includes(ri.item_id));
-    }) ?? [];
-
-    const autoDeniedIds = conflictingRentalsDeny.map((r: any) => r.id);
-    const autoDeniedUsers = conflictingRentalsDeny.map((r: any) => r.user_id);
-
-    if (autoDeniedIds.length > 0) {
-      // Auto-deny them
-      await supabase
+      const { data: overlappingRentalsDeny } = await supabase
         .from("rentals")
-        .update({
-          status: "denied",
-          owner_message: "Otro alquiler fue confirmado para este horario.",
-          updated_at: new Date().toISOString(),
-        })
-        .in("id", autoDeniedIds);
+        .select("id, user_id, rental_request_items!inner(item_id)")
+        .eq("status", "pending").neq("id", rental_id)
+        .lt("start_datetime", rental.end_datetime).gt("end_datetime", rental.start_datetime);
 
-      // Create notifications for auto-denied users
-      const formatDateTime = (iso: string) => {
-        const d = new Date(iso);
-        return d.toLocaleString("es-AR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
+      if (overlappingRentalsDeny) {
+        const conflicting = overlappingRentalsDeny.filter((r: any) => {
+          const items = r.rental_request_items ?? [];
+          return items.some((ri: any) => itemIds.includes(ri.item_id));
         });
-      };
 
-      const dateTimeStr = formatDateTime(rental.start_datetime);
-      const rentalName = rental.band_or_event_name ?? "Alquiler";
-      const autoDenyNotifications = autoDeniedUsers.map((uid) => ({
-        user_id: uid,
-        type: "rental_denied" as const,
-        message: `Tu alquiler (${rentalName}) para ${dateTimeStr} ha sido denegado porque otro alquiler fue confirmado para el mismo horario.`,
-        owner_message: "Otro alquiler fue confirmado para este horario.",
-      }));
+        autoDeniedIds = conflicting.map((r: any) => r.id);
 
-      await supabase.from("notifications").insert(autoDenyNotifications);
+        if (autoDeniedIds.length > 0) {
+          await supabase.from("rentals")
+            .update({ status: "denied", owner_message: "Otro alquiler fue confirmado para este horario.", updated_at: new Date().toISOString() })
+            .in("id", autoDeniedIds);
+
+          const dt = new Date(rental.start_datetime).toLocaleString("es-AR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+          const notifs = conflicting.map((r: any) => ({
+            user_id: r.user_id, type: "rental_denied",
+            message: `Tu alquiler (${rentalName}) para ${dt} ha sido denegado porque otro alquiler fue confirmado para el mismo horario.`,
+            owner_message: "Otro alquiler fue confirmado para este horario.",
+          }));
+          await supabase.from("notifications").insert(notifs);
+        }
+      }
     }
 
-    // Create notification for the approved user
-    const formatDateTimeApproved = (iso: string) => {
-      const d = new Date(iso);
-      return d.toLocaleString("es-AR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    };
-
-    const dateTimeStrApproved = formatDateTimeApproved(rental.start_datetime);
-    const rentalNameApproved = rental.band_or_event_name ?? "Alquiler";
+    // Notify approved user
+    const dtApproved = new Date(rental.start_datetime).toLocaleString("es-AR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
     await supabase.from("notifications").insert({
       user_id: rental.user_id,
       type: "rental_confirmed",
-      message: `Tu alquiler (${rentalNameApproved}) para ${dateTimeStrApproved} ha sido confirmado.`,
+      message: `Tu alquiler (${rentalName}) para ${dtApproved} ha sido confirmado.`,
       owner_message: owner_message ?? null,
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        auto_denied_count: autoDeniedIds.length,
-        auto_denied_ids: autoDeniedIds,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ success: true, auto_denied_count: autoDeniedIds.length, auto_denied_ids: autoDeniedIds });
   } catch (err) {
     console.error("approve-rental error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
