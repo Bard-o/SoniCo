@@ -287,11 +287,8 @@ const RequestReservation = () => {
               avisaremos en cuanto el estudio la confirme.
             </p>
             <div className="mt-8 flex justify-center gap-3">
-              <Button asChild variant="outline">
-                <Link to="/app">Volver al inicio</Link>
-              </Button>
               <Button asChild variant="cta">
-                <Link to="/app/reservations">Ver mis reservas</Link>
+                <Link to="/app">Volver al inicio</Link>
               </Button>
             </div>
           </div>
