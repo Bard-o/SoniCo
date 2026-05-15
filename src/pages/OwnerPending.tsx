@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -305,6 +305,43 @@ const OwnerPending = () => {
   const isLoading = resLoading || rentLoading;
   const hasError = resError || rentError;
   const refetch = () => { refetchRes(); refetchRent(); };
+
+  // Track if we've already run conflict checks for the current data
+  const checkedRef = useRef(false);
+
+  // Auto-run conflict checks when pending data loads
+  useEffect(() => {
+    if (isLoading) return;
+    if (pending === undefined && pendingRentals === undefined) return;
+
+    const runChecks = async () => {
+      const map: Record<string, { count: number; crossCount: number }> = {};
+
+      const reservationChecks = (pending ?? []).map(async (r) => {
+        const result = await approveReservation(r.id, undefined, false);
+        if (result.success) {
+          const c = result.data?.conflicts ?? 0;
+          const cc = result.data?.cross_conflicts ?? 0;
+          if (c > 0 || cc > 0) map[r.id] = { count: c, crossCount: cc };
+        }
+      });
+
+      const rentalChecks = (pendingRentals ?? []).map(async (r) => {
+        const result = await approveRental(r.id, undefined, false);
+        if (result.success) {
+          const c = result.data?.conflicts ?? 0;
+          const cc = result.data?.cross_conflicts ?? 0;
+          if (c > 0 || cc > 0) map[r.id] = { count: c, crossCount: cc };
+        }
+      });
+
+      await Promise.allSettled([...reservationChecks, ...rentalChecks]);
+      setConflictMap(map);
+      checkedRef.current = true;
+    };
+
+    runChecks();
+  }, [pending, pendingRentals, isLoading]);
 
   // Build combined list
   const allItems: PendingItem[] = [
