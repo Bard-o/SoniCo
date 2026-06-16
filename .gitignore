@@ -1,5 +1,3 @@
-# ignore documentation prompt files
-documentation/*
 # ignore github MCP config
 opencode.json
 # ignore skills (temporal)
