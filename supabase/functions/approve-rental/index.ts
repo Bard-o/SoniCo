@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface ApproveRentalRequest {
   rental_id: string;
@@ -56,9 +57,10 @@ serve(async (req: Request) => {
       return jsonResponse({ error: `Rental is no longer pending (current status: ${rental.status})` }, 400);
     }
 
-    // Fetch rental items
+    // Fetch rental items with names
     const { data: rentalItems } = await supabase
-      .from("rental_request_items").select("id, item_id, quantity")
+      .from("rental_request_items")
+      .select("id, item_id, quantity, items(name)")
       .eq("rental_id", rental_id);
 
     const rentalName = rental.band_or_event_name ?? "Alquiler";
@@ -228,6 +230,19 @@ serve(async (req: Request) => {
             owner_message: "Otro alquiler fue confirmado para este horario.",
           }));
           await supabase.from("notifications").insert(notifs);
+
+          // Email: auto-denied users
+          for (const r of conflicting) {
+            const rItems = (r.rental_request_items ?? []).map((ri: any) => ({
+              name: ri.items?.name ?? "Equipo",
+              quantity: ri.quantity,
+            }));
+            await sendNotificationEmail(supabase, "rental_denied", r.user_id, {
+              rental: { id: r.id, start_datetime: rental.start_datetime, end_datetime: rental.end_datetime },
+              items: rItems,
+              ownerMessage: "Otro alquiler fue confirmado para este horario.",
+            });
+          }
         }
       }
     }
@@ -239,6 +254,17 @@ serve(async (req: Request) => {
       type: "rental_confirmed",
       message: `Tu alquiler (${rentalName}) para ${dtApproved} ha sido confirmado.`,
       owner_message: owner_message ?? null,
+    });
+
+    // Email: approved user
+    const approvedItems = rentalItems?.map((ri: any) => ({
+      name: ri.items?.name ?? "Equipo",
+      quantity: ri.quantity,
+    })) ?? [];
+    await sendNotificationEmail(supabase, "rental_confirmed", rental.user_id, {
+      rental: { id: rental.id, start_datetime: rental.start_datetime, end_datetime: rental.end_datetime },
+      items: approvedItems,
+      ownerMessage: owner_message ?? undefined,
     });
 
     return jsonResponse({ success: true, auto_denied_count: autoDeniedIds.length, auto_denied_ids: autoDeniedIds });

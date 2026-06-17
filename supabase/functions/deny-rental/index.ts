@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface DenyRentalRequest {
   rental_id: string;
@@ -115,6 +116,12 @@ serve(async (req: Request) => {
       );
     }
 
+    // Fetch rental items for email
+    const { data: rentalItems } = await supabase
+      .from("rental_request_items")
+      .select("quantity, items(name)")
+      .eq("rental_id", rental_id);
+
     // Update rental status to denied
     const { error: updateError } = await supabase
       .from("rentals")
@@ -152,6 +159,17 @@ serve(async (req: Request) => {
       type: "rental_denied",
       message: `Tu alquiler (${rentalName}) para ${dateTimeStr} ha sido denegado.`,
       owner_message: owner_message ?? null,
+    });
+
+    // Email: denied user
+    const items = rentalItems?.map((ri: any) => ({
+      name: ri.items?.name ?? "Equipo",
+      quantity: ri.quantity,
+    })) ?? [];
+    await sendNotificationEmail(supabase, "rental_denied", rental.user_id, {
+      rental: { id: rental.id, start_datetime: rental.start_datetime, end_datetime: rental.end_datetime },
+      items,
+      ownerMessage: owner_message ?? undefined,
     });
 
     return new Response(JSON.stringify({ success: true }), {

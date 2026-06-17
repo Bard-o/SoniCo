@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface DenyRequest {
   reservation_id: string;
@@ -158,6 +159,13 @@ serve(async (req: Request) => {
       type: "reservation_denied",
       message: `Tu reserva en ${roomName} para ${dateStr} ha sido denegada.`,
       owner_message: owner_message ?? null,
+    });
+
+    // Email: denied user
+    await sendNotificationEmail(supabase, "reservation_denied", reservation.user_id, {
+      reservation: { id: reservation.id, start_time: reservation.start_time },
+      room: { name: roomName },
+      ownerMessage: owner_message ?? undefined,
     });
 
     return new Response(JSON.stringify({ success: true }), {

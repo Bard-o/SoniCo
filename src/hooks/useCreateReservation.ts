@@ -90,6 +90,14 @@ export function useCreateReservation() {
       }
 
       setIsCreating(false);
+
+      // Notify owner via email (fire-and-forget)
+      supabase.functions.invoke("notify-owner-reservation-requested", {
+        body: { reservation_id: reservationData.id },
+      }).catch((err) =>
+        console.warn("[useCreateReservation] Failed to notify owner:", err)
+      );
+
       return { id: reservationData.id };
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Unknown error");

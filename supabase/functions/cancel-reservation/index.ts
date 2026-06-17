@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface CancelRequest {
   reservation_id: string;
@@ -84,6 +85,12 @@ serve(async (req: Request) => {
       user_id: user.id,
       type: "reservation_cancelled",
       message: `Reserva cancelada para ${dateStr}.`,
+    });
+
+    // Email: confirmation to user
+    await sendNotificationEmail(supabase, "reservation_cancelled", user.id, {
+      reservation: { id: reservation.id, start_time: (reservation as any).start_time },
+      room: { name: roomName },
     });
 
     return jsonResponse({ success: true });

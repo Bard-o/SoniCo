@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface CreateBlockRequest {
   room_id?: string;
@@ -105,7 +106,7 @@ serve(async (req: Request) => {
       // Confirmed reservations overlapping → cancel
       const { data: confirmedRes } = await supabase
         .from("reservations")
-        .select("id, user_id")
+        .select("id, user_id, start_time, end_time")
         .eq("room_id", room_id).eq("status", "confirmed")
         .lt("start_time", end.toISOString()).gt("end_time", start.toISOString());
 
@@ -126,12 +127,21 @@ serve(async (req: Request) => {
           owner_message: "El estudio está en mantenimiento.",
         }));
         await supabase.from("notifications").insert(notifications);
+
+        // Email: cancelled users
+        for (const r of confirmedRes) {
+          await sendNotificationEmail(supabase, "reservation_cancelled", r.user_id, {
+            reservation: { id: r.id, start_time: r.start_time, end_time: r.end_time },
+            room: { name: roomName },
+            ownerMessage: "El estudio está en mantenimiento.",
+          });
+        }
       }
 
       // Pending reservations overlapping → deny
       const { data: pendingRes } = await supabase
         .from("reservations")
-        .select("id, user_id")
+        .select("id, user_id, start_time, end_time")
         .eq("room_id", room_id).eq("status", "pending")
         .lt("start_time", end.toISOString()).gt("end_time", start.toISOString());
 
@@ -151,6 +161,15 @@ serve(async (req: Request) => {
           owner_message: "El estudio está en mantenimiento.",
         }));
         await supabase.from("notifications").insert(notifications);
+
+        // Email: denied users
+        for (const r of pendingRes) {
+          await sendNotificationEmail(supabase, "reservation_denied", r.user_id, {
+            reservation: { id: r.id, start_time: r.start_time, end_time: r.end_time },
+            room: { name: roomName },
+            ownerMessage: "El estudio está en mantenimiento.",
+          });
+        }
       }
 
       const totalAffected = (confirmedRes?.length ?? 0) + (pendingRes?.length ?? 0);

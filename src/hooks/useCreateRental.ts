@@ -73,6 +73,14 @@ export function useCreateRental() {
       }
 
       setIsCreating(false);
+
+      // Notify owner via email (fire-and-forget)
+      supabase.functions.invoke("notify-owner-rental-requested", {
+        body: { rental_id: rentalData.id },
+      }).catch((err) =>
+        console.warn("[useCreateRental] Failed to notify owner:", err)
+      );
+
       return { id: rentalData.id };
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Unknown error");

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface CancelRequest {
   rental_id: string;
@@ -64,6 +65,12 @@ serve(async (req: Request) => {
       }, 400);
     }
 
+    // Fetch rental items for email
+    const { data: rentalItems } = await supabase
+      .from("rental_request_items")
+      .select("quantity, items(name)")
+      .eq("rental_id", rental_id);
+
     // Cancel rental
     const { error: updateError } = await supabase
       .from("rentals")
@@ -81,6 +88,16 @@ serve(async (req: Request) => {
       user_id: user.id,
       type: "rental_cancelled",
       message: `Alquiler cancelado para el ${dateStr}.`,
+    });
+
+    // Email: confirmation to user
+    const items = rentalItems?.map((ri: any) => ({
+      name: ri.items?.name ?? "Equipo",
+      quantity: ri.quantity,
+    })) ?? [];
+    await sendNotificationEmail(supabase, "rental_cancelled", user.id, {
+      rental: { id: rental.id, start_datetime: rental.start_datetime, end_datetime: rental.end_datetime },
+      items,
     });
 
     return jsonResponse({ success: true });

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface ApproveRequest {
   reservation_id: string;
@@ -222,6 +223,15 @@ serve(async (req: Request) => {
         owner_message: "Otra reserva fue confirmada para este horario.",
       })) ?? [];
       await supabase.from("notifications").insert(notifications);
+
+      // Email: auto-denied users
+      for (const r of (overlappingPendingDeny ?? [])) {
+        await sendNotificationEmail(supabase, "reservation_denied", r.user_id, {
+          reservation: { id: reservation.id, start_time: reservation.start_time, end_time: reservation.end_time },
+          room: { name: roomName },
+          ownerMessage: "Otra reserva fue confirmada para este horario.",
+        });
+      }
     }
 
     // Notify approved user
@@ -230,6 +240,13 @@ serve(async (req: Request) => {
       type: "reservation_confirmed",
       message: `Tu reserva en ${roomName} ha sido confirmada.`,
       owner_message: owner_message ?? null,
+    });
+
+    // Email: approved user
+    await sendNotificationEmail(supabase, "reservation_confirmed", reservation.user_id, {
+      reservation: { id: reservation.id, start_time: reservation.start_time, end_time: reservation.end_time },
+      room: { name: roomName },
+      ownerMessage: owner_message ?? undefined,
     });
 
     return jsonResponse({ success: true, auto_denied_count: autoDeniedIds.length, auto_denied_ids: autoDeniedIds });

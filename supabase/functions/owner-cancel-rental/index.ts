@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { sendNotificationEmail } from "../_shared/email.ts";
 
 interface CancelRequest {
   rental_id: string;
@@ -55,6 +56,12 @@ serve(async (req: Request) => {
       return jsonResponse({ error: `No se puede cancelar un alquiler con estado '${rental.status}'` }, 400);
     }
 
+    // Fetch rental items for email
+    const { data: rentalItems } = await supabase
+      .from("rental_request_items")
+      .select("quantity, items(name)")
+      .eq("rental_id", rental_id);
+
     // Cancel rental
     const { error: updateError } = await supabase
       .from("rentals")
@@ -74,6 +81,17 @@ serve(async (req: Request) => {
       type: "rental_cancelled",
       message: `Tu alquiler para el ${dateStr} fue cancelado por el estudio.`,
       owner_message: owner_message ?? "Cancelada por el estudio.",
+    });
+
+    // Email: cancelled user
+    const items = rentalItems?.map((ri: any) => ({
+      name: ri.items?.name ?? "Equipo",
+      quantity: ri.quantity,
+    })) ?? [];
+    await sendNotificationEmail(supabase, "rental_cancelled", rental.user_id, {
+      rental: { id: rental.id, start_datetime: rental.start_datetime, end_datetime: rental.end_datetime },
+      items,
+      ownerMessage: owner_message ?? "Cancelada por el estudio.",
     });
 
     return jsonResponse({ success: true });
