@@ -75,8 +75,12 @@ export interface RoomItem {
 export type NotificationType =
   | "reservation_confirmed"
   | "reservation_denied"
+  | "reservation_cancelled"
+  | "reservation_requested"
   | "rental_confirmed"
-  | "rental_denied";
+  | "rental_denied"
+  | "rental_cancelled"
+  | "rental_requested";
 
 export interface Notification {
   id: string;
@@ -142,6 +146,16 @@ export interface ReservationItem {
   created_at: string;
 }
 
+export interface MaintenanceBlock {
+  id: string;
+  room_id: string | null;
+  item_id: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  reason: string;
+  created_at: string;
+}
+
 // Supabase-generated types for use with createClient<Database>
 export interface Database {
   public: {
@@ -195,6 +209,11 @@ rental_request_items: {
         Row: Notification;
         Insert: Omit<Notification, "id" | "created_at">;
         Update: Partial<Omit<Notification, "id" | "created_at">>;
+      };
+      maintenance_blocks: {
+        Row: MaintenanceBlock;
+        Insert: Omit<MaintenanceBlock, "id" | "created_at">;
+        Update: Partial<Omit<MaintenanceBlock, "id" | "created_at">>;
       };
     };
     Views: {

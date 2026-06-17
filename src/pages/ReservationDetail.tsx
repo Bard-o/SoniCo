@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useReservation } from "@/hooks/useReservation";
 import { useWithdrawReservation } from "@/hooks/useWithdrawReservation";
+import { useCancelReservation } from "@/hooks/useCancelReservation";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -119,10 +121,25 @@ const ReservationDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { reservation, isLoading, error, refetch } = useReservation(id ?? "");
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { withdraw, isLoading: isWithdrawing } = useWithdrawReservation(() => {
     refetch();
   });
+
+  const { cancelReservation, isProcessing: isCancelling } = useCancelReservation();
+
+  const handleCancel = async () => {
+    if (!reservation) return;
+    const result = await cancelReservation(reservation.id);
+    if (result.success) {
+      toast.success("Reserva cancelada");
+      setShowCancelDialog(false);
+      refetch();
+    } else {
+      toast.error(result.error ?? "Error al cancelar la reserva");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -250,6 +267,7 @@ const ReservationDetail = () => {
                     onClick={() => {
                       withdraw(reservation.id);
                       setShowWithdrawDialog(false);
+                      refetch();
                     }}
                   >
                     Retirar
@@ -259,9 +277,34 @@ const ReservationDetail = () => {
             </AlertDialog>
           )}
           {reservation.status === "confirmed" && (
-            <Button variant="outline" disabled>
-              Cancelar reserva
-            </Button>
+            <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:bg-destructive/10"
+                >
+                  Cancelar reserva
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancelar reserva</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    ¿Estás seguro de que quieres cancelar esta reserva? Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>No, mantenerla</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleCancel}
+                    disabled={isCancelling}
+                  >
+                    {isCancelling ? "Cancelando..." : "Sí, cancelar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
 

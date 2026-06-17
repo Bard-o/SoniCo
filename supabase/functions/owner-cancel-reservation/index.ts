@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 interface CancelRequest {
   reservation_id: string;
-  reason?: string;
+  owner_message?: string;
 }
 
 const corsHeaders = {
@@ -33,11 +33,17 @@ serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return jsonResponse({ error: "Invalid or expired token" }, 401);
 
+    // Verify owner
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles").select("id, role").eq("id", user.id).single();
+    if (profileError || !profile) return jsonResponse({ error: "Profile not found" }, 404);
+    if (profile.role !== "owner") return jsonResponse({ error: "Solo el propietario puede realizar esta acción" }, 403);
+
     const body: CancelRequest = await req.json();
-    const { reservation_id } = body;
+    const { reservation_id, owner_message } = body;
     if (!reservation_id) return jsonResponse({ error: "reservation_id is required" }, 400);
 
-    // Fetch reservation with room name
+    // Fetch reservation
     const { data: reservation, error: fetchError } = await supabase
       .from("reservations")
       .select("id, user_id, status, start_time, room_id, rooms(name)")
@@ -45,24 +51,8 @@ serve(async (req: Request) => {
       .single();
 
     if (fetchError || !reservation) return jsonResponse({ error: "Reservation not found" }, 404);
-    if (reservation.user_id !== user.id) return jsonResponse({ error: "No tienes permiso para cancelar esta reserva" }, 403);
-    if (reservation.status !== "confirmed") return jsonResponse({ error: `No puedes cancelar una reserva con estado '${reservation.status}'` }, 400);
-
-    // Check cancellation window
-    const { data: settings } = await supabase
-      .from("studio_settings")
-      .select("min_cancellation_hours")
-      .single();
-
-    const minHours = settings?.min_cancellation_hours ?? 24;
-    const hoursUntilStart = (new Date(reservation.start_time).getTime() - Date.now()) / (1000 * 60 * 60);
-
-    if (hoursUntilStart < minHours) {
-      return jsonResponse({
-        error: `No puedes cancelar con menos de ${minHours} horas de anticipación.`,
-        hours_until_start: Math.max(0, hoursUntilStart).toFixed(1),
-        min_hours_required: minHours,
-      }, 400);
+    if (reservation.status !== "confirmed" && reservation.status !== "pending") {
+      return jsonResponse({ error: `No se puede cancelar una reserva con estado '${reservation.status}'` }, 400);
     }
 
     const roomName = (reservation as any).rooms?.name ?? "la sala";
@@ -73,22 +63,24 @@ serve(async (req: Request) => {
       .update({
         status: "cancelled",
         cancelled_at: new Date().toISOString(),
+        owner_message: owner_message ?? "Cancelada por el estudio.",
       })
       .eq("id", reservation_id);
 
     if (updateError) return jsonResponse({ error: "Error al cancelar la reserva" }, 500);
 
-    // Create notification
+    // Create notification for the user
     const dateStr = new Date(reservation.start_time).toLocaleDateString("es-CO", { day: "numeric", month: "long" });
     await supabase.from("notifications").insert({
-      user_id: user.id,
+      user_id: reservation.user_id,
       type: "reservation_cancelled",
-      message: `Reserva cancelada para ${dateStr}.`,
+      message: `Tu reserva en ${roomName} para ${dateStr} fue cancelada por el estudio.`,
+      owner_message: owner_message ?? "Cancelada por el estudio.",
     });
 
     return jsonResponse({ success: true });
   } catch (err) {
-    console.error("cancel-reservation error:", err);
+    console.error("owner-cancel-reservation error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);
   }
 });

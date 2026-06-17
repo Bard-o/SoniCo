@@ -13,6 +13,7 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; end?: boolean };
@@ -91,7 +92,9 @@ export const Navbar = () => {
           {isLoading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : user && profile ? (
-            /* Authenticated: profile dropdown */
+            /* Authenticated: notification bell + profile dropdown */
+            <>
+              <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-foreground/5">
@@ -127,6 +130,7 @@ export const Navbar = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             /* Not authenticated: login/register on desktop, hamburger on mobile */
             <>

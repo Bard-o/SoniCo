@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 interface CancelRequest {
-  reservation_id: string;
-  reason?: string;
+  rental_id: string;
 }
 
 const corsHeaders = {
@@ -34,19 +33,19 @@ serve(async (req: Request) => {
     if (authError || !user) return jsonResponse({ error: "Invalid or expired token" }, 401);
 
     const body: CancelRequest = await req.json();
-    const { reservation_id } = body;
-    if (!reservation_id) return jsonResponse({ error: "reservation_id is required" }, 400);
+    const { rental_id } = body;
+    if (!rental_id) return jsonResponse({ error: "rental_id is required" }, 400);
 
-    // Fetch reservation with room name
-    const { data: reservation, error: fetchError } = await supabase
-      .from("reservations")
-      .select("id, user_id, status, start_time, room_id, rooms(name)")
-      .eq("id", reservation_id)
+    // Fetch rental
+    const { data: rental, error: fetchError } = await supabase
+      .from("rentals")
+      .select("id, user_id, status, start_datetime")
+      .eq("id", rental_id)
       .single();
 
-    if (fetchError || !reservation) return jsonResponse({ error: "Reservation not found" }, 404);
-    if (reservation.user_id !== user.id) return jsonResponse({ error: "No tienes permiso para cancelar esta reserva" }, 403);
-    if (reservation.status !== "confirmed") return jsonResponse({ error: `No puedes cancelar una reserva con estado '${reservation.status}'` }, 400);
+    if (fetchError || !rental) return jsonResponse({ error: "Rental not found" }, 404);
+    if (rental.user_id !== user.id) return jsonResponse({ error: "No tienes permiso para cancelar este alquiler" }, 403);
+    if (rental.status !== "confirmed") return jsonResponse({ error: `No puedes cancelar un alquiler con estado '${rental.status}'` }, 400);
 
     // Check cancellation window
     const { data: settings } = await supabase
@@ -55,7 +54,7 @@ serve(async (req: Request) => {
       .single();
 
     const minHours = settings?.min_cancellation_hours ?? 24;
-    const hoursUntilStart = (new Date(reservation.start_time).getTime() - Date.now()) / (1000 * 60 * 60);
+    const hoursUntilStart = (new Date(rental.start_datetime).getTime() - Date.now()) / (1000 * 60 * 60);
 
     if (hoursUntilStart < minHours) {
       return jsonResponse({
@@ -65,30 +64,28 @@ serve(async (req: Request) => {
       }, 400);
     }
 
-    const roomName = (reservation as any).rooms?.name ?? "la sala";
-
-    // Cancel reservation
+    // Cancel rental
     const { error: updateError } = await supabase
-      .from("reservations")
+      .from("rentals")
       .update({
         status: "cancelled",
         cancelled_at: new Date().toISOString(),
       })
-      .eq("id", reservation_id);
+      .eq("id", rental_id);
 
-    if (updateError) return jsonResponse({ error: "Error al cancelar la reserva" }, 500);
+    if (updateError) return jsonResponse({ error: "Error al cancelar el alquiler" }, 500);
 
     // Create notification
-    const dateStr = new Date(reservation.start_time).toLocaleDateString("es-CO", { day: "numeric", month: "long" });
+    const dateStr = new Date(rental.start_datetime).toLocaleDateString("es-CO", { day: "numeric", month: "long" });
     await supabase.from("notifications").insert({
       user_id: user.id,
-      type: "reservation_cancelled",
-      message: `Reserva cancelada para ${dateStr}.`,
+      type: "rental_cancelled",
+      message: `Alquiler cancelado para el ${dateStr}.`,
     });
 
     return jsonResponse({ success: true });
   } catch (err) {
-    console.error("cancel-reservation error:", err);
+    console.error("cancel-rental error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);
   }
 });

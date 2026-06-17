@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRental } from "@/hooks/useRental";
 import { useWithdrawRental } from "@/hooks/useWithdrawRental";
+import { useCancelRental } from "@/hooks/useCancelRental";
+import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function formatDateTime(start: string, end: string) {
@@ -39,7 +41,21 @@ const RentalDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { rental, isLoading, error, refetch } = useRental(id ?? "");
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { withdraw, isWithdrawing, error: withdrawError } = useWithdrawRental();
+  const { cancelRental, isProcessing: isCancelling } = useCancelRental();
+
+  const handleCancel = async () => {
+    if (!rental) return;
+    const result = await cancelRental(rental.id);
+    if (result.success) {
+      toast.success("Alquiler cancelado");
+      setShowCancelDialog(false);
+      refetch();
+    } else {
+      toast.error(result.error ?? "Error al cancelar el alquiler");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -170,9 +186,34 @@ const RentalDetail = () => {
             </AlertDialog>
           )}
           {rental.status === "confirmed" && (
-            <Button variant="outline" disabled>
-              Cancelar alquiler
-            </Button>
+            <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:bg-destructive/10"
+                >
+                  Cancelar alquiler
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancelar alquiler</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    ¿Estás seguro de que quieres cancelar este alquiler? Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>No, mantenerlo</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleCancel}
+                    disabled={isCancelling}
+                  >
+                    {isCancelling ? "Cancelando..." : "Sí, cancelar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
           {withdrawError && (
             <p className="w-full text-sm text-destructive">{withdrawError}</p>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useItems } from "@/hooks/useItems";
 import { useItem } from "@/hooks/useItem";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { useMaintenanceBlocks } from "@/hooks/useMaintenanceBlocks";
+import { useCreateMaintenanceBlock } from "@/hooks/useCreateMaintenanceBlock";
+import { useDeleteMaintenanceBlock } from "@/hooks/useDeleteMaintenanceBlock";
 import { ITEM_CATEGORIES, type ItemCategory } from "@/types/database";
+import { toast } from "sonner";
 
 const OwnerItemForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +40,11 @@ const OwnerItemForm = () => {
   const { create, update } = useItems();
   const { item, isLoading: itemLoading, refetch: refetchItem } = useItem(id ?? "");
   const { upload, isUploading, remove: deletePhoto } = usePhotoUpload();
+  const { blocks: maintenance, isLoading: mtnLoading, refetch: refetchMtn } = useMaintenanceBlocks(
+    item?.id ? { item_id: item.id } : {}
+  );
+  const { createBlock, isProcessing: isCreatingBlock } = useCreateMaintenanceBlock();
+  const { deleteBlock, isProcessing: isDeletingBlock } = useDeleteMaintenanceBlock();
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Track files selected by user but not yet saved — upload only happens on "Guardar"
   const pendingUploadsRef = useRef<{ file: File; blobUrl: string }[]>([]);
@@ -44,6 +61,12 @@ const OwnerItemForm = () => {
   const [salePrice, setSalePrice] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Maintenance block dialog state
+  const [mtnDialogOpen, setMtnDialogOpen] = useState(false);
+  const [mtnStart, setMtnStart] = useState("");
+  const [mtnEnd, setMtnEnd] = useState("");
+  const [mtnReason, setMtnReason] = useState("");
 
   // Populate form when editing an existing item
   useEffect(() => {
@@ -90,6 +113,34 @@ const OwnerItemForm = () => {
     pendingUploadsRef.current.push({ file, blobUrl });
     setPhotos((p) => [...p, blobUrl]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const onAddMaintenance = async () => {
+    if (!item?.id || !mtnStart || !mtnEnd || !mtnReason) return;
+    const result = await createBlock({
+      item_id: item.id,
+      start_datetime: new Date(mtnStart).toISOString(),
+      end_datetime: new Date(mtnEnd).toISOString(),
+      reason: mtnReason,
+    });
+    if (result.success) {
+      toast.success("Bloque de mantenimiento creado");
+      setMtnDialogOpen(false);
+      setMtnStart("");
+      setMtnEnd("");
+      setMtnReason("");
+      refetchMtn();
+    } else {
+      toast.error(result.error ?? "Error al crear el bloque");
+    }
+  };
+
+  const handleDeleteMtn = async (id: string) => {
+    const ok = await deleteBlock(id);
+    if (ok) {
+      toast.success("Bloque eliminado");
+      refetchMtn();
+    }
   };
 
   const handleSave = async () => {
@@ -278,6 +329,75 @@ const OwnerItemForm = () => {
               <p className="mt-1 text-sm text-foreground/65">Salas a las que este item está asignado.</p>
               <div className="mt-5 divide-y divide-border">
                 <p className="py-4 text-center text-sm text-foreground/55">Consultar salas enlazadas.</p>
+              </div>
+            </div>
+          )}
+
+          {editing && item && (
+            <div className="card-surface bg-card p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="sub-heading">Bloques de mantenimiento</h2>
+                  <p className="mt-1 text-sm text-foreground/65">El equipo no estará disponible durante estos periodos.</p>
+                </div>
+                <Dialog open={mtnDialogOpen} onOpenChange={setMtnDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <Plus className="h-3.5 w-3.5" /> Nuevo bloque
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Bloque de mantenimiento</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Inicio</Label>
+                          <Input type="datetime-local" value={mtnStart} onChange={(e) => setMtnStart(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Fin</Label>
+                          <Input type="datetime-local" value={mtnEnd} onChange={(e) => setMtnEnd(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Motivo (interno)</Label>
+                        <Textarea rows={3} placeholder="Mantenimiento preventivo, reparación…" value={mtnReason} onChange={(e) => setMtnReason(e.target.value)} />
+                      </div>
+                      <div className="rounded-sm bg-warning-soft px-3 py-2 text-xs text-foreground/75">
+                        Los bloques de mantenimiento para equipos no cancelan reservas automáticamente.
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="cta" onClick={onAddMaintenance} disabled={!mtnStart || !mtnEnd || !mtnReason || isCreatingBlock}>
+                        {isCreatingBlock ? "Guardando…" : "Guardar bloque"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="mt-6 divide-y divide-border">
+                {mtnLoading ? (
+                  <div className="py-4 text-center text-sm text-foreground/55">Cargando…</div>
+                ) : !maintenance || maintenance.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-foreground/55">Sin bloques programados.</p>
+                ) : (
+                  maintenance.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between gap-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          {new Date(m.start_datetime).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} →{" "}
+                          {new Date(m.end_datetime).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        {m.reason && <p className="mt-0.5 text-xs text-foreground/55">{m.reason}</p>}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteMtn(m.id)} disabled={isDeletingBlock} className="text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
