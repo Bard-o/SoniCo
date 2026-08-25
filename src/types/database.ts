@@ -15,7 +15,7 @@ export const ITEM_CATEGORIES = [
 
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
-export interface Profile {
+export type Profile = {
   id: string;
   full_name: string;
   email: string;
@@ -25,13 +25,13 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface StudioSettings {
+export type StudioSettings = {
   id: string;
   hours_per_day: Record<string, [number, number]>;
   min_cancellation_hours: number;
 }
 
-export interface Room {
+export type Room = {
   id: string;
   slug: string;
   name: string;
@@ -43,7 +43,7 @@ export interface Room {
   updated_at: string;
 }
 
-export interface Item {
+export type Item = {
   id: string;
   name: string;
   description: string;
@@ -59,11 +59,11 @@ export interface Item {
   updated_at: string;
 }
 
-export interface RentalItem extends Item {
+export type RentalItem = Item & {
   available_units: number;
 }
 
-export interface RoomItem {
+export type RoomItem = {
   id: string;
   room_id: string;
   item_id: string;
@@ -82,7 +82,7 @@ export type NotificationType =
   | "rental_cancelled"
   | "rental_requested";
 
-export interface Notification {
+export type Notification = {
   id: string;
   user_id: string;
   type: NotificationType;
@@ -94,7 +94,7 @@ export interface Notification {
 
 export type ReservationStatus = "pending" | "confirmed" | "denied" | "cancelled";
 
-export interface Reservation {
+export type Reservation = {
   id: string;
   user_id: string;
   room_id: string;
@@ -112,7 +112,7 @@ export interface Reservation {
 
 export type RentalStatus = "pending" | "confirmed" | "denied" | "cancelled";
 
-export interface Rental {
+export type Rental = {
   id: string;
   user_id: string;
   band_or_event_name: string | null;
@@ -128,7 +128,7 @@ export interface Rental {
   updated_at: string;
 }
 
-export interface RentalItemRecord {
+export type RentalItemRecord = {
   id: string;
   rental_id: string;
   item_id: string;
@@ -137,7 +137,7 @@ export interface RentalItemRecord {
   created_at: string;
 }
 
-export interface ReservationItem {
+export type ReservationItem = {
   id: string;
   reservation_id: string;
   item_id: string;
@@ -146,7 +146,7 @@ export interface ReservationItem {
   created_at: string;
 }
 
-export interface MaintenanceBlock {
+export type MaintenanceBlock = {
   id: string;
   room_id: string | null;
   item_id: string | null;
@@ -156,72 +156,118 @@ export interface MaintenanceBlock {
   created_at: string;
 }
 
+/** Makes the columns in K optional — use for columns the database fills in. */
+type WithDefaults<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 // Supabase-generated types for use with createClient<Database>
-export interface Database {
+//
+// Every table and view must carry a `Relationships` key and the schema must
+// declare `Functions`, or it stops satisfying postgrest-js's GenericSchema.
+// When that happens the client does not error — it silently degrades every
+// Insert/Update parameter to `never`, so no query is type checked at all.
+// Relationships is only consulted for typing embedded `select()` joins, so an
+// empty tuple is accurate here: the app resolves joins by hand.
+export type Database = {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
         Insert: Omit<Profile, "created_at" | "updated_at">;
         Update: Partial<Omit<Profile, "id" | "created_at">>;
+        Relationships: [];
       };
       studio_settings: {
         Row: StudioSettings;
         Insert: Omit<StudioSettings, "id">;
         Update: Partial<Omit<StudioSettings, "id">>;
+        Relationships: [];
       };
       rooms: {
         Row: Room;
         Insert: Omit<Room, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<Room, "id" | "created_at">>;
+        Relationships: [];
       };
       items: {
         Row: Item;
         Insert: Omit<Item, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<Item, "id" | "created_at">>;
+        Relationships: [];
       };
       room_items: {
         Row: RoomItem;
         Insert: Omit<RoomItem, "id" | "created_at" | "updated_at">;
         Update: Partial<Omit<RoomItem, "id" | "created_at">>;
+        Relationships: [];
       };
       reservations: {
         Row: Reservation;
-        Insert: Omit<Reservation, "id" | "created_at" | "updated_at">;
+        Insert: WithDefaults<
+          Omit<Reservation, "id" | "created_at" | "updated_at">,
+          | "status"
+          | "band_name"
+          | "cancellation_reason"
+          | "cancelled_at"
+          | "owner_message"
+        >;
         Update: Partial<Omit<Reservation, "id" | "created_at">>;
+        Relationships: [];
       };
       reservation_items: {
         Row: ReservationItem;
         Insert: Omit<ReservationItem, "id" | "created_at">;
         Update: Partial<Omit<ReservationItem, "id" | "created_at">>;
+        Relationships: [];
       };
       rentals: {
         Row: Rental;
-        Insert: Omit<Rental, "id" | "created_at" | "updated_at">;
+        Insert: WithDefaults<
+          Omit<Rental, "id" | "created_at" | "updated_at">,
+          | "status"
+          | "band_or_event_name"
+          | "details"
+          | "cancellation_reason"
+          | "cancelled_at"
+          | "owner_message"
+        >;
         Update: Partial<Omit<Rental, "id" | "created_at">>;
+        Relationships: [];
       };
-rental_request_items: {
+      rental_request_items: {
         Row: RentalItemRecord;
         Insert: Omit<RentalItemRecord, "id" | "created_at">;
         Update: Partial<Omit<RentalItemRecord, "id" | "created_at">>;
+        Relationships: [];
       };
       notifications: {
         Row: Notification;
         Insert: Omit<Notification, "id" | "created_at">;
         Update: Partial<Omit<Notification, "id" | "created_at">>;
+        Relationships: [];
       };
       maintenance_blocks: {
         Row: MaintenanceBlock;
         Insert: Omit<MaintenanceBlock, "id" | "created_at">;
         Update: Partial<Omit<MaintenanceBlock, "id" | "created_at">>;
+        Relationships: [];
       };
     };
     Views: {
       rental_items: {
         Row: RentalItem;
-        Insert: never;
-        Update: never;
+        Relationships: [];
       };
     };
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
-}
+};
+
+type Tables = Database["public"]["Tables"];
+
+/** Payload accepted by `.insert()` on a table — omits generated columns. */
+export type TableInsert<T extends keyof Tables> = Tables[T]["Insert"];
+
+/** Payload accepted by `.update()` on a table — omits immutable columns. */
+export type TableUpdate<T extends keyof Tables> = Tables[T]["Update"];

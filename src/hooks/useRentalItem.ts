@@ -12,17 +12,26 @@ export function useRentalItem(id: string) {
       setIsLoading(false);
       return;
     }
-    supabase
-      .from("rental_items")
-      .select("*")
-      .eq("id", id)
-      .single()
-      .then(({ data, error }) => {
-        if (error) throw error;
+
+    // The query builder is a thenable, not a real Promise, so it has no
+    // .catch()/.finally() — await it instead.
+    const fetchItem = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from("rental_items")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        setError(new Error(error.message));
+      } else {
         setItem(data);
-      })
-      .catch(setError)
-      .finally(() => setIsLoading(false));
+      }
+      setIsLoading(false);
+    };
+
+    fetchItem();
   }, [id]);
 
   return { item, isLoading, error };

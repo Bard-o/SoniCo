@@ -10,6 +10,10 @@ interface ApproveResult {
     message?: string;
     approved?: boolean;
     reservation_id?: string;
+    // A confirmed rental occupying the same slot — see approve-reservation.
+    cross_conflicts?: number;
+    cross_conflict_ids?: string[];
+    cross_conflict_type?: "rental";
   };
 }
 

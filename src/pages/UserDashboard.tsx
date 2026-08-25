@@ -275,12 +275,14 @@ const UserDashboard = () => {
     refetch: refetchT,
   } = useRentals();
 
-  const { withdraw: withdrawRes, isLoading: withdrawingRes } = useWithdrawReservation(() => {
-    refetchR();
-  });
-  const { withdraw: withdrawRental, isLoading: withdrawingRental } = useWithdrawRental(() => {
-    refetchT();
-  });
+  const { withdraw: withdrawRes, isWithdrawing: withdrawingRes } =
+    useWithdrawReservation(() => {
+      refetchR();
+    });
+  const { withdraw: withdrawRental, isWithdrawing: withdrawingRental } =
+    useWithdrawRental(() => {
+      refetchT();
+    });
 
   const merged = useMemo<ActivityItem[]>(() => {
     const items: ActivityItem[] = [];

@@ -194,6 +194,7 @@ const RequestRental = () => {
       details: details || undefined,
       start_datetime: startAt.toISOString(),
       end_datetime: endAt.toISOString(),
+      total_price: totalEstimated,
       items,
     });
 

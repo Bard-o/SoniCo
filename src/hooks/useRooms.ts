@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Room } from "@/types/database";
+import type { Room, TableInsert, TableUpdate } from "@/types/database";
 import { useToast } from "./use-toast";
 
 export function useRooms() {
@@ -30,7 +30,7 @@ export function useRooms() {
     fetchRooms();
   }, []);
 
-  const create = async (room: Omit<Room, "id" | "created_at" | "updated_at">) => {
+  const create = async (room: TableInsert<"rooms">) => {
     const { data, error } = await supabase.from("rooms").insert(room).select().single();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -41,7 +41,7 @@ export function useRooms() {
     return data;
   };
 
-  const update = async (id: string, updates: Partial<Room>) => {
+  const update = async (id: string, updates: TableUpdate<"rooms">) => {
     const { data, error } = await supabase
       .from("rooms")
       .update(updates)

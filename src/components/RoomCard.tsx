@@ -20,9 +20,12 @@ function toCardRoom(room: RoomCardProps["room"]) {
     slug: room.slug,
     name: room.name,
     image: room.photos?.[0] ?? "",
-    shortDescription: room.description?.slice(0, 120) + (room.description && room.description.length > 120 ? "…" : "") ?? "",
-    pricePerHalfHour: room.price_per_half_hour ?? 0,
-    available: room.is_active ?? true,
+    shortDescription:
+      room.description.length > 120
+        ? `${room.description.slice(0, 120)}…`
+        : room.description,
+    pricePerHalfHour: room.price_per_half_hour,
+    available: room.is_active,
     categories: [] as string[],
   };
 }

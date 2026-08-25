@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Item, ItemCategory } from "@/types/database";
+import type {
+  Item,
+  ItemCategory,
+  TableInsert,
+  TableUpdate,
+} from "@/types/database";
 import { useToast } from "./use-toast";
 
 export function useItems(categoryFilter?: ItemCategory) {
@@ -31,7 +36,7 @@ export function useItems(categoryFilter?: ItemCategory) {
     fetchItems();
   }, [categoryFilter]);
 
-  const create = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
+  const create = async (item: TableInsert<"items">) => {
     const { data, error } = await supabase.from("items").insert(item).select().single();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -42,7 +47,7 @@ export function useItems(categoryFilter?: ItemCategory) {
     return data;
   };
 
-  const update = async (id: string, updates: Partial<Item>) => {
+  const update = async (id: string, updates: TableUpdate<"items">) => {
     const { data, error } = await supabase
       .from("items")
       .update(updates)

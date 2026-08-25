@@ -123,7 +123,7 @@ const ReservationDetail = () => {
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-  const { withdraw, isLoading: isWithdrawing } = useWithdrawReservation(() => {
+  const { withdraw, isWithdrawing } = useWithdrawReservation(() => {
     refetch();
   });
 

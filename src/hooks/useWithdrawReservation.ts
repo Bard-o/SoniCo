@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function useWithdrawReservation() {
+export function useWithdrawReservation(onSuccess?: () => void) {
   const { user } = useAuth();
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +34,7 @@ export function useWithdrawReservation() {
       }
 
       setIsWithdrawing(false);
+      onSuccess?.();
       return true;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Unknown error");
