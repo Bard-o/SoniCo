@@ -13,7 +13,7 @@ export function useOwnerCancelRental() {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { error: fnError } = await supabase.functions.invoke(
         "owner-cancel-rental",
         { body: { rental_id: rentalId, owner_message: ownerMessage ?? null } }
       );

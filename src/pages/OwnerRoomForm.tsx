@@ -31,10 +31,7 @@ import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { useMaintenanceBlocks } from "@/hooks/useMaintenanceBlocks";
 import { useCreateMaintenanceBlock } from "@/hooks/useCreateMaintenanceBlock";
 import { useDeleteMaintenanceBlock } from "@/hooks/useDeleteMaintenanceBlock";
-import { ITEM_CATEGORIES, type ItemCategory } from "@/types/database";
-import type { Item } from "@/types/database";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 function slugify(name: string): string {
   return name
@@ -51,7 +48,7 @@ const OwnerRoomForm = () => {
   const editing = Boolean(slug);
 
   const { create, update } = useRooms();
-  const { room, isLoading: roomLoading, refetch: refetchRoom } = useRoom(slug ?? "");
+  const { room, isLoading: roomLoading } = useRoom(slug ?? "");
   const { linkedItems, isLoading: linksLoading, link, unlink } = useRoomItems(room?.id ?? "");
   const { items: allItems } = useItems();
   const { upload, isUploading, remove: deletePhoto } = usePhotoUpload();
@@ -175,7 +172,7 @@ const OwnerRoomForm = () => {
     setIsSaving(true);
     try {
       // Upload pending photos before saving
-      let finalPhotos = [...photos];
+      const finalPhotos = [...photos];
       if (pendingUploadsRef.current.length > 0) {
         for (const pending of pendingUploadsRef.current) {
           const realUrl = await upload(pending.file, `rooms/${room?.id ?? "new"}`);

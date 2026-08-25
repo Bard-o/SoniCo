@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Room, Item, RoomItem } from "@/types/database";
+import type { Room, Item } from "@/types/database";
 
 export function useRoom(slug: string) {
   const [room, setRoom] = useState<Room | null>(null);

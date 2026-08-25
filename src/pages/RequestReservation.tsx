@@ -36,14 +36,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useAuth } from "@/contexts/AuthContext";
 import { useRoom } from "@/hooks/useRoom";
 import { useItems } from "@/hooks/useItems";
 import { useStudioSettings } from "@/hooks/useStudioSettings";
 import { useCreateReservation } from "@/hooks/useCreateReservation";
 import { cn } from "@/lib/utils";
 import { MIN_RESERVATION_HALF_HOURS } from "@/config/constants";
-import type { Item } from "@/types/database";
 
 const STEPS = ["Fecha y duración", "Equipo extra", "Confirmar"];
 
@@ -115,7 +113,6 @@ function generateTimeSlots(openHour: number, closeHour: number): string[] {
 const RequestReservation = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { room, linkedItems, isLoading: roomLoading, error: roomError } = useRoom(slug ?? "");
   const { items: allItems, isLoading: itemsLoading } = useItems();
   const { settings, isLoading: settingsLoading } = useStudioSettings();

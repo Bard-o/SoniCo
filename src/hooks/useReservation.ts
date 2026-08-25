@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Reservation, ReservationStatus } from "@/types/database";
+import type { Reservation } from "@/types/database";
 
 interface ReservationDetailRoom {
   id: string;

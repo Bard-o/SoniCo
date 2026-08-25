@@ -100,7 +100,7 @@ function buildDate(d: Date | undefined, time: string): Date | null {
 
 const RequestRental = () => {
   const navigate = useNavigate();
-  const { lines, setQty, remove, count, clear } = useCart();
+  const { setQty, remove, count, clear } = useCart();
   const { items: catalog, isLoading: catalogLoading } = useRentalItems();
   const detailed = useCartDetailed(catalog);
   const { settings, isLoading: settingsLoading } = useStudioSettings();
@@ -177,7 +177,6 @@ const RequestRental = () => {
   const canProceedToStep2 =
     !noStart && !noEnd && !tooShort && !tooLong && hours >= MIN_RENTAL_HOURS;
 
-  const canSubmit = bandName.trim().length > 0 || true; // band name optional
 
   // Handle confirm
   const handleConfirm = async () => {

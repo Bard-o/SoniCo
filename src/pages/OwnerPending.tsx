@@ -14,7 +14,6 @@ import { useApproveReservation } from "@/hooks/useApproveReservation";
 import { useDenyReservation } from "@/hooks/useDenyReservation";
 import { useApproveRental } from "@/hooks/useApproveRental";
 import { useDenyRental } from "@/hooks/useDenyRental";
-import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 type TabValue = "all" | "rooms" | "rentals";
@@ -275,7 +274,6 @@ function ItemCard({ item, onApprove, onDeny, approvingId, denyingId, conflictCou
 // --- Main Component ---
 
 const OwnerPending = () => {
-  const { profile } = useAuth();
   const { pending, isLoading: resLoading, error: resError, refetch: refetchRes } = useOwnerPendingReservations();
   const { pendingRentals, isLoading: rentLoading, error: rentError, refetch: refetchRent } = useOwnerPendingRentals();
 
@@ -300,7 +298,6 @@ const OwnerPending = () => {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [denyingId, setDenyingId] = useState<string | null>(null);
 
-  const firstName = profile?.full_name?.split(" ")[0] ?? "admin";
 
   const isLoading = resLoading || rentLoading;
   const hasError = resError || rentError;

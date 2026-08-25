@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, renderHook } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
@@ -13,7 +13,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
       getSession: () => mockGetSession(),
-      onAuthStateChange: (cb: any) => {
+      onAuthStateChange: (cb: unknown) => {
         mockOnAuthStateChange(cb);
         return { data: { subscription: { unsubscribe: vi.fn() } } };
       },

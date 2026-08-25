@@ -38,7 +38,7 @@ const OwnerItemForm = () => {
   const editing = Boolean(id);
 
   const { create, update } = useItems();
-  const { item, isLoading: itemLoading, refetch: refetchItem } = useItem(id ?? "");
+  const { item, isLoading: itemLoading } = useItem(id ?? "");
   const { upload, isUploading, remove: deletePhoto } = usePhotoUpload();
   const { blocks: maintenance, isLoading: mtnLoading, refetch: refetchMtn } = useMaintenanceBlocks(
     item?.id ? { item_id: item.id } : {}
@@ -148,7 +148,7 @@ const OwnerItemForm = () => {
     setIsSaving(true);
     try {
       // Upload pending photos FIRST — replace blob URLs with real Storage URLs
-      let finalPhotos = [...photos];
+      const finalPhotos = [...photos];
       if (pendingUploadsRef.current.length > 0) {
         for (const pending of pendingUploadsRef.current) {
           const realUrl = await upload(pending.file, `items/${id ?? "new"}`);

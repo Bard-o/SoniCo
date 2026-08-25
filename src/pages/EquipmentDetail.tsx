@@ -5,13 +5,11 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRentalItem } from "@/hooks/useRentalItem";
-import { useRentalItems } from "@/hooks/useRentalItems";
 import { useCart } from "@/contexts/CartContext";
 
 const EquipmentDetail = () => {
   const { id } = useParams();
   const { item, isLoading, error } = useRentalItem(id ?? "");
-  const { items } = useRentalItems();
   const { lines, add, setQty } = useCart();
 
   const line = lines.find((l) => l.itemId === item?.id);

@@ -19,7 +19,6 @@ import { useReservation } from "@/hooks/useReservation";
 import { useWithdrawReservation } from "@/hooks/useWithdrawReservation";
 import { useCancelReservation } from "@/hooks/useCancelReservation";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function formatDateTime(start: string, end: string) {
@@ -52,10 +51,6 @@ function PriceBreakdownCard({
   const endDate = new Date(reservation.end_time);
   const halfHours = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 30));
   const roomPrice = halfHours * (reservation.room?.price_per_half_hour ?? 0);
-  const addonsTotal = (reservation.items ?? []).reduce(
-    (sum, item) => sum + item.quantity * Number(item.unit_price),
-    0,
-  );
   const total = Number(reservation.total_price);
 
   return (

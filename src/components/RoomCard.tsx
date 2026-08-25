@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
-import type { Room } from "@/types/database";
 
 interface RoomCardProps {
   room: {

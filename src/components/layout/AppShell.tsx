@@ -6,8 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 
+// `role` stays in the props type because callers pass it, but the shell reads
+// the real role from the authenticated profile rather than trusting the caller.
 export const AppShell = ({
-  role = "user",
   children,
 }: {
   role?: "user" | "owner";

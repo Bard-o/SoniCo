@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, Calendar, Headphones, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";

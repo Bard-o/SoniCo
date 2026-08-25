@@ -11,8 +11,8 @@ const mockFrom = vi.fn();
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
-      signInWithPassword: (args: any) => mockSignInWithPassword(args),
-      signInWithOAuth: (args: any) => mockSignInWithOAuth(args),
+      signInWithPassword: (args: unknown) => mockSignInWithPassword(args),
+      signInWithOAuth: (args: unknown) => mockSignInWithOAuth(args),
     },
     from: () => ({
       select: () => ({

@@ -13,7 +13,7 @@ export function useOwnerCancelReservation() {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { error: fnError } = await supabase.functions.invoke(
         "owner-cancel-reservation",
         { body: { reservation_id: reservationId, owner_message: ownerMessage ?? null } }
       );

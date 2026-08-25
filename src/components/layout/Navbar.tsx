@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { Link, NavLink } from "react-router-dom";
+import { ChevronDown, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,7 +45,6 @@ const getInitials = (name: string): string =>
     .slice(0, 2);
 
 export const Navbar = () => {
-  const navigate = useNavigate();
   const { user, profile, isLoading, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 

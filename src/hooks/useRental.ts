@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Rental, RentalStatus } from "@/types/database";
+import type { Rental } from "@/types/database";
 
 interface RentalDetailItem {
   id: string;
