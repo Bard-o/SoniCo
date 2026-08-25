@@ -61,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const accessToken = params.get("access_token");
           const refreshToken = params.get("refresh_token");
           if (accessToken && refreshToken) {
-            console.log("[Auth] OAuth callback detected, setting session");
             window.history.replaceState(null, "", window.location.pathname + window.location.search);
             await supabase.auth.setSession({
               access_token: accessToken,
@@ -95,8 +94,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Profile fetch is handled by the separate useEffect below.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
-        console.log("[Auth] onAuthStateChange:", event, !!newSession);
-
         if (event === "SIGNED_OUT" || !newSession) {
           setSession(null);
           setUser(null);
@@ -130,7 +127,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const isAuthPage = ["/login", "/register"].includes(window.location.pathname);
       if (isAuthPage && profileData) {
-        console.log("[Auth] Redirecting to:", profileData.role === "owner" ? "/owner" : "/app");
         navigate(profileData.role === "owner" ? "/owner" : "/app", { replace: true });
       }
     };

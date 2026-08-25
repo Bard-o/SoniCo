@@ -20,8 +20,7 @@ const Login = () => {
     setError(null);
     setIsLoading(true);
 
-    console.log("[Login] Attempting sign in with:", email);
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -38,7 +37,6 @@ const Login = () => {
       return;
     }
 
-    console.log("[Login] SignIn success:", data.user?.id, data.session?.access_token ? "has token" : "NO token");
     // AuthContext.onAuthStateChange handles role-based redirect to /app or /owner
   };
 
