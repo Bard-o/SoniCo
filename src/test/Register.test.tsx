@@ -27,7 +27,12 @@ const renderRegister = () =>
 describe("Register", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSignUp.mockResolvedValue({ error: null });
+    // supabase.auth.signUp always resolves with a `data` envelope, even on
+    // error. Omitting it here made Register blow up on `signUpData.session`.
+    mockSignUp.mockResolvedValue({
+      data: { user: { id: "user-1" }, session: { access_token: "token" } },
+      error: null,
+    });
     mockSignInWithOAuth.mockResolvedValue({ error: null });
   });
 
@@ -137,8 +142,41 @@ describe("Register", () => {
     });
   });
 
+  it("asks the user to confirm their email when signUp returns no session", async () => {
+    mockSignUp.mockResolvedValue({
+      data: { user: { id: "user-1" }, session: null },
+      error: null,
+    });
+
+    renderRegister();
+
+    fireEvent.change(screen.getByLabelText("Nombre completo"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getByLabelText("Correo electrónico"), {
+      target: { value: "test@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Contraseña"), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirmar contraseña"), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Revisa tu correo para confirmar tu cuenta antes de iniciar sesión."
+        )
+      ).toBeInTheDocument();
+    });
+  });
+
   it("shows error when email already exists", async () => {
     mockSignUp.mockResolvedValue({
+      data: { user: null, session: null },
       error: { message: "User already registered" },
     });
 
